@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/vyanawatch/vyanawatch/db"
@@ -167,10 +168,11 @@ func (s *Server) handlePublicStatusPage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Build response with uptime stats for each monitor
+	// Build response with uptime stats and recent heartbeats for each monitor
 	type monitorStatus struct {
 		db.Monitor
-		UptimeStats db.UptimeStats `json:"uptime_stats"`
+		UptimeStats      db.UptimeStats `json:"uptime_stats"`
+		RecentHeartbeats []db.Heartbeat `json:"recent_heartbeats"`
 	}
 
 	result := struct {
@@ -184,9 +186,12 @@ func (s *Server) handlePublicStatusPage(w http.ResponseWriter, r *http.Request) 
 	hbRepo := db.NewHeartbeatRepo()
 	for _, m := range page.Monitors {
 		stats, _ := hbRepo.GetUptimeStats(m.ID)
+		since := time.Now().Add(-1 * time.Hour)
+		heartbeats, _ := hbRepo.GetResponseTimeHistory(m.ID, since, 50)
 		result.Monitors = append(result.Monitors, monitorStatus{
-			Monitor:     m,
-			UptimeStats: stats,
+			Monitor:          m,
+			UptimeStats:      stats,
+			RecentHeartbeats: heartbeats,
 		})
 	}
 

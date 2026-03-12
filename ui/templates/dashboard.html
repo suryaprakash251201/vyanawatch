@@ -283,6 +283,117 @@
         .sidebar-list::-webkit-scrollbar-track { background: transparent; }
         .sidebar-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         .sidebar-list::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* ── Dark Mode ── */
+        html.dark {
+            --bg: #0f172a;
+            --white: #1e293b;
+            --surface: #1e293b;
+            --border: #334155;
+            --border-light: #1e293b;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
+            --shadow: 0 1px 3px rgba(0,0,0,.3);
+            --shadow-md: 0 4px 6px rgba(0,0,0,.3);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,.4);
+        }
+        html.dark body { background: var(--bg); color: var(--text); }
+        html.dark .header { background: var(--surface); border-color: var(--border); }
+        html.dark .sidebar { background: var(--surface); border-color: var(--border); }
+        html.dark .sidebar-search { background: var(--bg); color: var(--text); border-color: var(--border); }
+        html.dark .sidebar-search:focus { background: var(--surface); }
+        html.dark .filter-pill { background: var(--surface); border-color: var(--border); color: var(--text2); }
+        html.dark .filter-pill:hover { background: var(--bg); }
+        html.dark .sidebar-item:hover { background: #1a2332; }
+        html.dark .sidebar-item.selected { background: rgba(34,197,94,.12); }
+        html.dark .qs-card { background: var(--surface); border-color: var(--border); }
+        html.dark .events-section { background: var(--surface); border-color: var(--border); }
+        html.dark .events-header { background: #172033; border-color: var(--border); }
+        html.dark .events-table th { background: #172033; border-color: var(--border); color: var(--text3); }
+        html.dark .events-table td { border-color: var(--border); }
+        html.dark .events-table tr:hover { background: #1a2332; }
+        html.dark .stat-card { background: var(--surface); border-color: var(--border); }
+        html.dark .heartbeat-section { background: var(--surface); border-color: var(--border); }
+        html.dark .chart-section { background: var(--surface); border-color: var(--border); }
+        html.dark .incidents-section { background: var(--surface); border-color: var(--border); }
+        html.dark .incidents-header { background: #172033; border-color: var(--border); }
+        html.dark .incident-row { border-color: var(--border); }
+        html.dark .incident-row:hover { background: #1a2332; }
+        html.dark .form-card { background: var(--surface); border-color: var(--border); }
+        html.dark .form-group input,
+        html.dark .form-group select,
+        html.dark .form-group textarea { background: var(--bg); color: var(--text); border-color: var(--border); }
+        html.dark .btn-outline { background: var(--surface); color: var(--text); border-color: var(--border); }
+        html.dark .btn-outline:hover { background: var(--bg); }
+        html.dark .conn-badge { background: var(--bg); color: var(--text2); }
+        html.dark .hb-tick.empty, html.dark .hb.empty { background: #334155; }
+        html.dark .sidebar-footer { border-color: var(--border); }
+        html.dark .events-header .btn-clear { background: var(--surface); color: var(--text2); border-color: var(--border); }
+
+        /* ── Profile Dropdown ── */
+        .profile-wrap { position: relative; }
+        .profile-wrap .avatar { cursor: pointer; }
+        .profile-dropdown {
+            position: absolute; top: calc(100% + 8px); right: 0;
+            background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+            min-width: 220px; box-shadow: var(--shadow-lg); z-index: 200;
+            display: none; overflow: hidden;
+        }
+        .profile-dropdown.open { display: block; animation: fadeIn .15s ease; }
+        .profile-dropdown .pd-header {
+            padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+        }
+        .profile-dropdown .pd-header .pd-avatar {
+            width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--green), var(--green-dark));
+            color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600;
+        }
+        .profile-dropdown .pd-header .pd-info { flex: 1; }
+        .profile-dropdown .pd-header .pd-name { font-size: 13px; font-weight: 700; color: var(--text); }
+        .profile-dropdown .pd-header .pd-role { font-size: 11px; color: var(--text2); }
+        .profile-dropdown .pd-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 13px;
+            color: var(--text); cursor: pointer; transition: background .15s; text-decoration: none;
+        }
+        .profile-dropdown .pd-item:hover { background: var(--bg); }
+        .profile-dropdown .pd-item svg { width: 16px; height: 16px; color: var(--text2); flex-shrink: 0; }
+        .profile-dropdown .pd-divider { height: 1px; background: var(--border); margin: 4px 0; }
+        .profile-dropdown .pd-item.danger { color: var(--red); }
+        .profile-dropdown .pd-item.danger svg { color: var(--red); }
+        /* Dark mode toggle inside dropdown */
+        .dark-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
+        .dark-toggle-row .dt-left { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text); }
+        .dark-toggle-row .dt-left svg { width: 16px; height: 16px; color: var(--text2); }
+        .toggle-switch {
+            width: 40px; height: 22px; border-radius: 11px; border: none; cursor: pointer;
+            background: #cbd5e1; position: relative; transition: background .2s; padding: 0;
+        }
+        .toggle-switch.on { background: var(--green); }
+        .toggle-switch .toggle-knob {
+            width: 18px; height: 18px; border-radius: 50%; background: #fff;
+            position: absolute; top: 2px; left: 2px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+        }
+        .toggle-switch.on .toggle-knob { transform: translateX(18px); }
+
+        /* ── Settings View ── */
+        .settings-layout { max-width: 800px; }
+        .settings-section {
+            background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow-sm);
+        }
+        .settings-section-header {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;
+            padding-bottom: 14px; border-bottom: 1px solid var(--border);
+        }
+        .settings-section-header h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .settings-section-header h3 svg { width: 20px; height: 20px; color: var(--text2); }
+        .settings-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); font-weight: 600; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .settings-grid .form-group { margin-bottom: 0; }
+        .settings-actions { margin-top: 24px; display: flex; gap: 10px; }
+        html.dark .settings-section { background: var(--surface); border-color: var(--border); }
+        html.dark .settings-section-header { border-color: var(--border); }
     </style>
 </head>
 <body>
@@ -295,7 +406,7 @@
             </a>
             <div class="nav-links">
                 <button class="nav-link active" id="navDashboard" onclick="showView('dashboard')">Dashboard</button>
-                <a class="nav-link" href="/status/default" target="_blank">Status Pages</a>
+                <a class="nav-link" href="/status/default">Status Pages</a>
             </div>
         </div>
         <div class="header-right">
@@ -303,11 +414,41 @@
                 <span class="conn-dot" id="connDot"></span>
                 <span id="connLabel">Connecting...</span>
             </div>
-            <a id="logoutBtn" class="nav-link" href="/logout" style="display:none" title="Sign Out">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg>
-                Logout
-            </a>
-            <div class="avatar" id="avatarBadge" title="VyanaWatch">V</div>
+            <div class="profile-wrap">
+                <div class="avatar" id="avatarBadge" title="VyanaWatch" onclick="toggleProfileMenu()">V</div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="pd-header">
+                        <div class="pd-avatar" id="pdAvatar">V</div>
+                        <div class="pd-info">
+                            <div class="pd-name" id="pdName">VyanaWatch</div>
+                            <div class="pd-role">Administrator</div>
+                        </div>
+                    </div>
+                    <div class="pd-item" onclick="showView('profile');closeProfileMenu()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Profile
+                    </div>
+                    <div class="pd-item" onclick="showView('settings');closeProfileMenu()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                        Settings
+                    </div>
+                    <div class="pd-divider"></div>
+                    <div class="dark-toggle-row">
+                        <div class="dt-left">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                            Dark Mode
+                        </div>
+                        <button class="toggle-switch" id="darkToggleSwitch" onclick="toggleDarkMode()">
+                            <span class="toggle-knob"></span>
+                        </button>
+                    </div>
+                    <div class="pd-divider"></div>
+                    <a class="pd-item danger" href="/logout" id="logoutLink" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Logout
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -504,6 +645,187 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Profile View -->
+            <div class="view" id="viewProfile">
+                <div class="form-view-title">Profile</div>
+                <div class="settings-layout">
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                Account Information
+                            </h3>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input id="profileUsername" type="text" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Role</label>
+                                <input type="text" value="Administrator" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                                Security
+                            </h3>
+                        </div>
+                        <p style="font-size:13px;color:var(--text2)">Password can be changed in the config.yaml file or via the VYANAWATCH_AUTH_PASSWORD environment variable.</p>
+                    </div>
+                    <button class="btn btn-outline" onclick="showView('dashboard')">Back to Dashboard</button>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div class="view" id="viewSettings">
+                <div class="form-view-title">Settings</div>
+                <div class="settings-layout">
+                    <!-- Email Configuration -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                Email (SMTP)
+                            </h3>
+                            <div class="settings-toggle">
+                                Enable
+                                <button class="toggle-switch" id="emailToggle" onclick="toggleSettingSwitch('emailToggle')">
+                                    <span class="toggle-knob"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label>SMTP Host</label>
+                                <input id="sEmailHost" type="text" placeholder="smtp.gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Port</label>
+                                <input id="sEmailPort" type="number" value="587" placeholder="587">
+                            </div>
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input id="sEmailUser" type="text" placeholder="your@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input id="sEmailPassword" type="password" placeholder="SMTP password or app password">
+                            </div>
+                            <div class="form-group">
+                                <label>From Address</label>
+                                <input id="sEmailFrom" type="email" placeholder="noreply@example.com">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1">
+                                <label>To (Recipients)</label>
+                                <input id="sEmailTo" type="text" placeholder="admin@example.com">
+                                <div class="hint">Comma-separated email addresses to receive notifications.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Template Event</label>
+                                <select id="sEmailTemplateType">
+                                    <option value="down" selected>Down</option>
+                                    <option value="recovery">Recovery</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Template Site Name</label>
+                                <input id="sEmailSiteName" type="text" placeholder="My Website">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Configuration -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L1 11l7 3 2 7 4-5 7 2z"/><path d="M8 14l6-8"/></svg>
+                                Telegram
+                            </h3>
+                            <div class="settings-toggle">
+                                Enable
+                                <button class="toggle-switch" id="telegramToggle" onclick="toggleSettingSwitch('telegramToggle')">
+                                    <span class="toggle-knob"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label>Bot Token</label>
+                                <input id="sTelegramToken" type="text" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                            </div>
+                            <div class="form-group">
+                                <label>Chat ID</label>
+                                <input id="sTelegramChatID" type="text" placeholder="-1001234567890">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discord Configuration -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M7.5 7.5c3.5-1 5.5-1 9 0"/><path d="M7 16.5c3.5 1 6.5 1 10 0"/><path d="M15.5 17c0 1 1.5 3 2 3 1.5 0 2.833-1.667 3.5-3 .667-1.667.5-5.833-1.5-11.5-1.457-1.015-3-1.34-4.5-1.5l-1 2.5"/><path d="M8.5 17c0 1-1.356 3-1.832 3-1.429 0-2.698-1.667-3.333-3-.635-1.667-.476-5.833 1.428-11.5C6.151 4.485 7.545 4.16 9 4l1 2.5"/></svg>
+                                Discord
+                            </h3>
+                            <div class="settings-toggle">
+                                Enable
+                                <button class="toggle-switch" id="discordToggle" onclick="toggleSettingSwitch('discordToggle')">
+                                    <span class="toggle-knob"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Webhook URL</label>
+                            <input id="sDiscordWebhook" type="url" placeholder="https://discord.com/api/webhooks/...">
+                        </div>
+                    </div>
+
+                    <!-- Webhook Configuration -->
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                                Custom Webhook
+                            </h3>
+                            <div class="settings-toggle">
+                                Enable
+                                <button class="toggle-switch" id="webhookToggle" onclick="toggleSettingSwitch('webhookToggle')">
+                                    <span class="toggle-knob"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label>URL</label>
+                                <input id="sWebhookURL" type="url" placeholder="https://hooks.example.com/notify">
+                            </div>
+                            <div class="form-group">
+                                <label>Method</label>
+                                <select id="sWebhookMethod">
+                                    <option value="POST">POST</option>
+                                    <option value="GET">GET</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1">
+                                <label>Headers (JSON)</label>
+                                <input id="sWebhookHeaders" type="text" placeholder='{"Authorization":"Bearer token"}'>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn btn-outline" onclick="previewEmailTemplate()">Preview Template</button>
+                        <button class="btn btn-outline" onclick="sendTestEmail()">Send Test Email</button>
+                        <button class="btn btn-green" onclick="saveSettings()">Save Settings</button>
+                        <button class="btn btn-outline" onclick="showView('dashboard')">Cancel</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -551,6 +873,11 @@
             document.getElementById('navDashboard').classList.add('active');
             selectedId = null;
             renderSidebar();
+        }
+        if (name === 'settings') loadSettings();
+        if (name === 'profile') {
+            const u = document.getElementById('pdName').textContent || 'admin';
+            document.getElementById('profileUsername').value = u;
         }
     }
 
@@ -1015,6 +1342,11 @@
         if (t === 'dns') body.dns_type = document.getElementById('fDNSType').value;
 
         if (!body.name) { toast('Name is required', 'error'); return; }
+        if (body.interval < 10) { toast('Interval must be at least 10 seconds', 'error'); return; }
+        if (body.timeout < 1) { toast('Timeout must be at least 1 second', 'error'); return; }
+        if (t === 'http' && !body.url) { toast('URL is required for HTTP monitor', 'error'); return; }
+        if (['ping', 'tcp', 'dns'].includes(t) && !body.hostname) { toast('Hostname is required', 'error'); return; }
+        if (t === 'tcp' && (!body.port || body.port < 1 || body.port > 65535)) { toast('TCP port must be between 1 and 65535', 'error'); return; }
 
         try {
             if (editingId) {
@@ -1088,15 +1420,173 @@
         try {
             const info = await api('/auth/me');
             if (info.auth_enabled && info.username) {
-                document.getElementById('logoutBtn').style.display = '';
-                document.getElementById('avatarBadge').textContent = info.username.charAt(0).toUpperCase();
+                const initial = info.username.charAt(0).toUpperCase();
+                document.getElementById('avatarBadge').textContent = initial;
                 document.getElementById('avatarBadge').title = info.username;
+                document.getElementById('pdAvatar').textContent = initial;
+                document.getElementById('pdName').textContent = info.username;
+                document.getElementById('logoutLink').style.display = '';
             }
         } catch (e) { /* auth not enabled or not logged in */ }
     }
 
+    // ── Profile Dropdown ──
+    function toggleProfileMenu() {
+        document.getElementById('profileDropdown').classList.toggle('open');
+    }
+    function closeProfileMenu() {
+        document.getElementById('profileDropdown').classList.remove('open');
+    }
+    document.addEventListener('click', (e) => {
+        const wrap = document.querySelector('.profile-wrap');
+        if (wrap && !wrap.contains(e.target)) closeProfileMenu();
+    });
+
+    // ── Dark Mode ──
+    function initDarkMode() {
+        const saved = localStorage.getItem('vyanawatch-dark');
+        if (saved === 'true') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('darkToggleSwitch').classList.add('on');
+        }
+    }
+    function toggleDarkMode() {
+        const isDark = document.documentElement.classList.toggle('dark');
+        document.getElementById('darkToggleSwitch').classList.toggle('on', isDark);
+        localStorage.setItem('vyanawatch-dark', isDark);
+    }
+
+    // ── Settings Toggle Helper ──
+    function toggleSettingSwitch(id) {
+        document.getElementById(id).classList.toggle('on');
+    }
+
+    // ── Settings Load / Save ──
+    async function loadSettings() {
+        try {
+            const s = await api('/settings');
+            // Email
+            if (s.email) {
+                document.getElementById('emailToggle').classList.toggle('on', !!s.email.enabled);
+                document.getElementById('sEmailHost').value = s.email.host || '';
+                document.getElementById('sEmailPort').value = s.email.port || 587;
+                document.getElementById('sEmailUser').value = s.email.username || '';
+                document.getElementById('sEmailPassword').value = '';
+                document.getElementById('sEmailFrom').value = s.email.from || '';
+                document.getElementById('sEmailTo').value = s.email.to || '';
+            }
+            // Telegram
+            if (s.telegram) {
+                document.getElementById('telegramToggle').classList.toggle('on', !!s.telegram.enabled);
+                document.getElementById('sTelegramToken').value = s.telegram.token || '';
+                document.getElementById('sTelegramChatID').value = s.telegram.chat_id || '';
+            }
+            // Discord
+            if (s.discord) {
+                document.getElementById('discordToggle').classList.toggle('on', !!s.discord.enabled);
+                document.getElementById('sDiscordWebhook').value = s.discord.webhook_url || '';
+            }
+            // Webhook
+            if (s.webhook) {
+                document.getElementById('webhookToggle').classList.toggle('on', !!s.webhook.enabled);
+                document.getElementById('sWebhookURL').value = s.webhook.url || '';
+                document.getElementById('sWebhookMethod').value = s.webhook.method || 'POST';
+                document.getElementById('sWebhookHeaders').value = s.webhook.headers || '';
+            }
+        } catch (e) {
+            console.error('Load settings error:', e);
+            toast('Failed to load settings', 'error');
+        }
+    }
+
+    async function saveSettings() {
+        const emailEnabled = document.getElementById('emailToggle').classList.contains('on');
+        const webhookEnabled = document.getElementById('webhookToggle').classList.contains('on');
+
+        const emailHost = document.getElementById('sEmailHost').value.trim();
+        const emailFrom = document.getElementById('sEmailFrom').value.trim();
+        const emailTo = document.getElementById('sEmailTo').value.trim();
+        const webhookURL = document.getElementById('sWebhookURL').value.trim();
+        const webhookHeaders = document.getElementById('sWebhookHeaders').value.trim();
+
+        if (emailEnabled && (!emailHost || !emailFrom || !emailTo)) {
+            toast('Email enabled: Host, From and To are required', 'error');
+            return;
+        }
+        if (webhookEnabled && !webhookURL) {
+            toast('Webhook enabled: URL is required', 'error');
+            return;
+        }
+        if (webhookHeaders) {
+            try {
+                JSON.parse(webhookHeaders);
+            } catch (e) {
+                toast('Webhook headers must be valid JSON', 'error');
+                return;
+            }
+        }
+
+        const body = {
+            email: {
+                enabled: emailEnabled,
+                host: emailHost,
+                port: parseInt(document.getElementById('sEmailPort').value) || 587,
+                username: document.getElementById('sEmailUser').value.trim(),
+                password: document.getElementById('sEmailPassword').value,
+                from: emailFrom,
+                to: emailTo
+            },
+            telegram: {
+                enabled: document.getElementById('telegramToggle').classList.contains('on'),
+                token: document.getElementById('sTelegramToken').value.trim(),
+                chat_id: document.getElementById('sTelegramChatID').value.trim()
+            },
+            discord: {
+                enabled: document.getElementById('discordToggle').classList.contains('on'),
+                webhook_url: document.getElementById('sDiscordWebhook').value.trim()
+            },
+            webhook: {
+                enabled: webhookEnabled,
+                url: webhookURL,
+                method: document.getElementById('sWebhookMethod').value,
+                headers: webhookHeaders
+            }
+        };
+        try {
+            await api('/settings', { method: 'PUT', body: JSON.stringify(body) });
+            toast('Settings saved successfully', 'success');
+        } catch (e) {
+            toast('Failed to save settings: ' + e.message, 'error');
+        }
+    }
+
+    async function sendTestEmail() {
+        const payload = {
+            event: document.getElementById('sEmailTemplateType').value,
+            monitor_name: document.getElementById('sEmailSiteName').value.trim() || 'My Website',
+            url: 'https://example.com',
+            reason: 'Test notification from VyanaWatch settings page',
+            status_code: 502,
+        };
+
+        try {
+            await api('/settings/test-email', { method: 'POST', body: JSON.stringify(payload) });
+            toast('Test email sent successfully', 'success');
+        } catch (e) {
+            toast('Failed to send test email: ' + e.message, 'error');
+        }
+    }
+
+    function previewEmailTemplate() {
+        const eventType = encodeURIComponent(document.getElementById('sEmailTemplateType').value || 'down');
+        const siteName = encodeURIComponent(document.getElementById('sEmailSiteName').value.trim() || 'My Website');
+        const previewURL = API + '/settings/email-preview?event=' + eventType + '&site=' + siteName;
+        window.open(previewURL, '_blank');
+    }
+
     // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {
+        initDarkMode();
         loadMonitors();
         loadEventLogs();
         connectSSE();

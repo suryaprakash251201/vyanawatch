@@ -105,46 +105,140 @@ func (s *Server) handleUpdateMonitor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode updates into a map first to handle partial updates
-	var updates map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+	// Decode updates into raw fields so we can safely merge with existing values.
+	var raw map[string]json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid JSON body")
 		return
 	}
 
-	// Apply updates to the existing monitor via re-marshal/unmarshal
-	existingJSON, _ := json.Marshal(existing)
-	if err := json.Unmarshal(existingJSON, &updates); err == nil {
-		// Merge: decode the request body again onto the existing
+	updated := *existing
+
+	if v, ok := raw["name"]; ok {
+		if err := json.Unmarshal(v, &updated.Name); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: name")
+			return
+		}
+	}
+	if v, ok := raw["interval"]; ok {
+		if err := json.Unmarshal(v, &updated.Interval); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: interval")
+			return
+		}
+	}
+	if v, ok := raw["timeout"]; ok {
+		if err := json.Unmarshal(v, &updated.Timeout); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: timeout")
+			return
+		}
+	}
+	if v, ok := raw["retries"]; ok {
+		if err := json.Unmarshal(v, &updated.Retries); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: retries")
+			return
+		}
+	}
+	if v, ok := raw["retry_interval"]; ok {
+		if err := json.Unmarshal(v, &updated.RetryInterval); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: retry_interval")
+			return
+		}
+	}
+	if v, ok := raw["active"]; ok {
+		if err := json.Unmarshal(v, &updated.Active); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: active")
+			return
+		}
 	}
 
-	// Simpler approach: decode body directly into the existing monitor
-	// Re-read is not possible since body is consumed, so we re-encode updates
-	updatedJSON, _ := json.Marshal(updates)
-	var updated db.Monitor
-	if err := json.Unmarshal(updatedJSON, &updated); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid update data")
-		return
+	if v, ok := raw["url"]; ok {
+		if err := json.Unmarshal(v, &updated.URL); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: url")
+			return
+		}
+	}
+	if v, ok := raw["method"]; ok {
+		if err := json.Unmarshal(v, &updated.Method); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: method")
+			return
+		}
+	}
+	if v, ok := raw["expected_status_code"]; ok {
+		if err := json.Unmarshal(v, &updated.ExpectedStatusCode); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: expected_status_code")
+			return
+		}
+	}
+	if v, ok := raw["keyword_check"]; ok {
+		if err := json.Unmarshal(v, &updated.KeywordCheck); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: keyword_check")
+			return
+		}
 	}
 
-	// Preserve immutable fields
+	if v, ok := raw["hostname"]; ok {
+		if err := json.Unmarshal(v, &updated.Hostname); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: hostname")
+			return
+		}
+	}
+	if v, ok := raw["port"]; ok {
+		if err := json.Unmarshal(v, &updated.Port); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: port")
+			return
+		}
+	}
+	if v, ok := raw["dns_type"]; ok {
+		if err := json.Unmarshal(v, &updated.DNSType); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: dns_type")
+			return
+		}
+	}
+
+	if v, ok := raw["alert_enabled"]; ok {
+		if err := json.Unmarshal(v, &updated.AlertEnabled); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: alert_enabled")
+			return
+		}
+	}
+	if v, ok := raw["alert_channels"]; ok {
+		if err := json.Unmarshal(v, &updated.AlertChannels); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid field: alert_channels")
+			return
+		}
+	}
+
+	// Preserve immutable fields.
 	updated.ID = existing.ID
 	updated.CreatedAt = existing.CreatedAt
 	updated.PushToken = existing.PushToken
-	updated.Type = existing.Type // Don't allow type change
+	updated.Type = existing.Type
 
 	if err := s.repos.Monitors.Update(&updated); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// Restart worker with new config
-	s.engine.RestartMonitor(s.ctx, updated)
+	// Apply worker state based on updated active flag.
+	if updated.Active {
+		s.engine.RestartMonitor(s.ctx, updated)
+	} else {
+		s.engine.RemoveMonitor(updated.ID)
+	}
 
 	// Broadcast event
 	s.sse.Broadcast(SSEEvent{
 		Event: "monitor_updated",
 		Data:  updated,
+	})
+
+	// Persist event log
+	s.repos.EventLogs.Create(&db.EventLog{
+		MonitorID:   updated.ID,
+		MonitorName: updated.Name,
+		Status:      string(updated.Status),
+		EventType:   "updated",
+		Message:     "Monitor updated",
 	})
 
 	respondJSON(w, http.StatusOK, updated)

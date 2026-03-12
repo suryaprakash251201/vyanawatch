@@ -138,6 +138,12 @@ func (s *Server) setupRoutes() *chi.Mux {
 			r.Get("/events/log", s.handleListEventLogs)
 			r.Delete("/events/log", s.handleClearEventLogs)
 
+			// Settings
+			r.Get("/settings", s.handleGetSettings)
+			r.Put("/settings", s.handleUpdateSettings)
+			r.Post("/settings/test-email", s.handleSendTestEmail)
+			r.Get("/settings/email-preview", s.handlePreviewEmailTemplate)
+
 			// Auth info
 			r.Get("/auth/me", s.handleAuthMe)
 		})

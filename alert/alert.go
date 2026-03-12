@@ -28,7 +28,7 @@ func NewDispatcher(cfg *config.Config) *Dispatcher {
 	}
 
 	if cfg.Alerting.Email.Enabled {
-		d.Register(&EmailNotifier{cfg: cfg.Alerting.Email})
+		d.Register(NewEmailNotifier(cfg.Alerting.Email))
 		log.Info().Msg("Alert channel registered: email")
 	}
 	if cfg.Alerting.Telegram.Enabled {

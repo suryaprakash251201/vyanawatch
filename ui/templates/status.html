@@ -3,143 +3,566 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">Status Page — VyanaWatch</title>
+    <title id="pageTitle">Health Dashboard — VyanaWatch</title>
     <style>
         :root {
-            --bg: #f5f6f8;
+            --bg: #f0f2f5;
             --surface: #ffffff;
-            --border: #e5e7eb;
-            --text: #1f2937;
-            --text2: #6b7280;
-            --green: #10b981;
-            --red: #ef4444;
-            --orange: #f59e0b;
-            --blue: #3b82f6;
-            --accent: #6c5ce7;
-            --radius: 10px;
+            --border: #e2e8f0;
+            --text: #1a202c;
+            --text2: #718096;
+            --green: #38a169;
+            --green-bg: #f0fff4;
+            --green-border: #c6f6d5;
+            --red: #e53e3e;
+            --red-bg: #fff5f5;
+            --red-border: #fed7d7;
+            --orange: #ed8936;
+            --blue: #4299e1;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,.06);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,.1);
+            --tooltip-bg: #ffffff;
+            --tooltip-border: #e2e8f0;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        html.dark {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --green-bg: #064e3b;
+            --green-border: #065f46;
+            --red-bg: #7f1d1d;
+            --red-border: #991b1b;
+            --shadow: 0 1px 3px rgba(0,0,0,.3);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,.4);
+            --tooltip-bg: #1e293b;
+            --tooltip-border: #475569;
+        }
+        html.dark .health-badge.up { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
+        html.dark .health-badge.up .dot { background: #6ee7b7; }
+        html.dark .health-badge.down { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+        html.dark .health-badge.down .dot { background: #fca5a5; }
+        html.dark .health-badge.paused { background: #78350f; color: #fcd34d; border-color: #92400e; }
+        html.dark .health-badge.paused .dot { background: #fcd34d; }
+        html.dark .health-badge.pending { background: #1e3a5f; color: #93c5fd; border-color: #1e40af; }
+        html.dark .health-badge.pending .dot { background: #93c5fd; }
+        html.dark .status-banner.all-up { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
+        html.dark .status-banner.some-down { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+        html.dark .hb-bar .tick.empty { background: #334155; }
+        html.dark .toolbar input[type="text"],
+        html.dark .toolbar select { background: var(--surface); color: var(--text); border-color: var(--border); }
 
-        .page { max-width: 760px; margin: 0 auto; padding: 40px 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background .3s, color .3s; }
+
+        .page { max-width: 1280px; margin: 0 auto; padding: 0 32px 80px; }
+
+        /* Top Nav Bar */
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 32px; border-bottom: 1px solid var(--border);
+            background: var(--surface); margin-bottom: 32px;
+            position: sticky; top: 0; z-index: 40;
+        }
+        .top-bar-left { display: flex; align-items: center; gap: 16px; }
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+            border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+            color: var(--text); font-size: 13px; font-weight: 500; cursor: pointer;
+            text-decoration: none; transition: all .2s;
+        }
+        .back-btn:hover { background: var(--surface); box-shadow: var(--shadow); }
+        .back-btn svg { width: 16px; height: 16px; }
+        .top-bar-brand { font-size: 18px; font-weight: 700; color: var(--green); }
+        .top-bar-right { display: flex; align-items: center; gap: 12px; }
+        .icon-btn {
+            width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--text2); cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; transition: all .2s;
+        }
+        .icon-btn:hover { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+        .icon-btn svg { width: 18px; height: 18px; }
 
         /* Header */
-        .sp-header { text-align: center; margin-bottom: 32px; }
-        .sp-header h1 { font-size: 26px; font-weight: 700; }
-        .sp-header p { color: var(--text2); margin-top: 6px; font-size: 14px; }
+        .sp-header { margin-bottom: 28px; }
+        .sp-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
+        .sp-header p { color: var(--text2); margin-top: 8px; font-size: 15px; }
 
-        /* Overall Status Banner */
-        .status-banner { border-radius: var(--radius); padding: 18px 24px; text-align: center; font-weight: 600; font-size: 15px; margin-bottom: 28px; }
-        .status-banner.all-up { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-        .status-banner.some-down { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+        /* Toolbar */
+        .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+        .search-wrap {
+            flex: 1; min-width: 200px; position: relative;
+        }
+        .search-wrap svg {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            width: 16px; height: 16px; color: var(--text2); pointer-events: none;
+        }
+        .toolbar input[type="text"] {
+            width: 100%; padding: 10px 16px 10px 40px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 14px; background: var(--surface); color: var(--text); outline: none;
+            transition: border-color .2s;
+        }
+        .toolbar input[type="text"]:focus { border-color: var(--blue); }
+        .toolbar-group { display: flex; align-items: center; gap: 8px; }
+        .toolbar-label { font-size: 13px; color: var(--text2); font-weight: 500; white-space: nowrap; }
+        .toolbar select {
+            padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 13px; background: var(--surface); color: var(--text); cursor: pointer; outline: none;
+        }
 
-        /* Monitor Cards */
-        .monitors { display: flex; flex-direction: column; gap: 10px; }
-        .mon-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
-        .mon-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .mon-dot.up { background: var(--green); }
-        .mon-dot.down { background: var(--red); }
-        .mon-dot.paused { background: var(--orange); }
-        .mon-dot.pending { background: var(--blue); }
-        .mon-info { flex: 1; }
-        .mon-name { font-weight: 600; font-size: 15px; }
-        .mon-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
-        .mon-stats { display: flex; gap: 18px; }
-        .mon-stat { text-align: right; }
-        .mon-stat-val { font-size: 14px; font-weight: 600; }
-        .mon-stat-lbl { font-size: 10px; color: var(--text2); text-transform: uppercase; }
+        /* Status Banner */
+        .status-banner { border-radius: var(--radius); padding: 16px 24px; text-align: center; font-weight: 600; font-size: 15px; margin-bottom: 24px; }
+        .status-banner.all-up { background: var(--green-bg); color: #276749; border: 1px solid var(--green-border); }
+        .status-banner.some-down { background: var(--red-bg); color: #9b2c2c; border: 1px solid var(--red-border); }
 
-        /* Uptime bars */
-        .uptime-row { display: flex; gap: 1px; height: 28px; align-items: flex-end; margin-top: 8px; }
-        .uptime-row .tick { flex: 1; border-radius: 2px; min-height: 4px; }
-        .uptime-row .tick.up { background: var(--green); height: 100%; }
-        .uptime-row .tick.down { background: var(--red); height: 100%; }
-        .uptime-row .tick.empty { background: #e5e7eb; height: 30%; }
+        /* Grid — 3 per row */
+        .monitors-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        /* Card */
+        .mon-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px 24px; transition: box-shadow .2s, transform .15s; box-shadow: var(--shadow);
+        }
+        .mon-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+
+        .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+        .card-name { font-weight: 700; font-size: 16px; }
+        .health-badge {
+            display: inline-flex; align-items: center; gap: 5px; padding: 3px 12px;
+            border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .health-badge.up { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+        .health-badge.down { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+        .health-badge.paused { background: #fffbeb; color: var(--orange); border: 1px solid #fde68a; }
+        .health-badge.pending { background: #ebf8ff; color: var(--blue); border: 1px solid #bee3f8; }
+        .health-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .health-badge.up .dot { background: var(--green); }
+        .health-badge.down .dot { background: var(--red); }
+        .health-badge.paused .dot { background: var(--orange); }
+        .health-badge.pending .dot { background: var(--blue); }
+
+        .card-meta { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+        .card-latency { font-size: 12px; color: var(--text2); margin-bottom: 10px; text-align: right; }
+        .card-latency strong { color: var(--text); font-weight: 600; }
+
+        /* Heartbeat bar */
+        .hb-bar { display: flex; gap: 2px; height: 32px; align-items: flex-end; position: relative; }
+        .hb-bar .tick {
+            flex: 1; border-radius: 3px; min-height: 6px; cursor: pointer;
+            opacity: 0; animation: tickIn .3s forwards; position: relative;
+        }
+        .hb-bar .tick.up { background: linear-gradient(180deg, #48bb78, #38a169); height: 100%; }
+        .hb-bar .tick.down { background: linear-gradient(180deg, #fc8181, #e53e3e); height: 100%; }
+        .hb-bar .tick.empty { background: #e2e8f0; height: 30%; }
+        .hb-bar .tick:hover { opacity: .8 !important; transform: scaleY(1.1); transform-origin: bottom; }
+        @keyframes tickIn { to { opacity: 1; } }
+
+        .hb-range { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+        /* Tick Tooltip (Gatus-style) */
+        .tick-tooltip {
+            position: fixed; z-index: 1000;
+            background: var(--tooltip-bg); border: 1px solid var(--tooltip-border);
+            border-radius: 10px; padding: 14px 18px; min-width: 260px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.15); pointer-events: none;
+            font-size: 13px; line-height: 1.6; display: none;
+        }
+        .tick-tooltip .tt-section { margin-bottom: 8px; }
+        .tick-tooltip .tt-section:last-child { margin-bottom: 0; }
+        .tick-tooltip .tt-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text2); margin-bottom: 2px; }
+        .tick-tooltip .tt-value { font-size: 13px; font-weight: 600; color: var(--text); }
+        .tick-tooltip .tt-value.green { color: var(--green); }
+        .tick-tooltip .tt-value.red { color: var(--red); }
+        .tick-tooltip .tt-condition { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); }
+        .tick-tooltip .tt-condition .check { color: var(--green); font-weight: bold; }
+        .tick-tooltip .tt-condition .cross { color: var(--red); font-weight: bold; }
 
         /* Footer */
-        .sp-footer { text-align: center; margin-top: 40px; color: var(--text2); font-size: 12px; }
-        .sp-footer a { color: var(--accent); text-decoration: none; }
+        .sp-footer { text-align: center; margin-top: 48px; color: var(--text2); font-size: 13px; }
+        .sp-footer a { color: var(--green); text-decoration: none; font-weight: 600; }
 
-        .loading { text-align: center; padding: 60px; color: var(--text2); }
-        .error-msg { text-align: center; padding: 60px; color: var(--red); }
+        /* Bottom-left refresh control */
+        .refresh-control {
+            position: fixed; bottom: 20px; left: 20px; z-index: 50;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .refresh-btn {
+            width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+            background: var(--surface); color: var(--text2); cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow); transition: all .2s;
+        }
+        .refresh-btn:hover { color: var(--text); box-shadow: var(--shadow-hover); }
+        .refresh-btn svg { width: 16px; height: 16px; }
+        .interval-select {
+            position: relative;
+        }
+        .interval-btn {
+            padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+            background: var(--surface); font-size: 13px; font-weight: 600; color: var(--text);
+            cursor: pointer; box-shadow: var(--shadow); display: flex; align-items: center; gap: 6px;
+            transition: all .2s;
+        }
+        .interval-btn:hover { box-shadow: var(--shadow-hover); }
+        .interval-btn svg { width: 14px; height: 14px; color: var(--text2); }
+        .interval-dropdown {
+            position: absolute; bottom: 44px; left: 0;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.15); overflow: hidden; display: none;
+            min-width: 80px;
+        }
+        .interval-dropdown.open { display: block; }
+        .interval-dropdown .iv-opt {
+            padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text);
+            transition: background .15s; text-align: center; font-weight: 500;
+        }
+        .interval-dropdown .iv-opt:hover { background: var(--bg); }
+        .interval-dropdown .iv-opt.active { background: var(--green-bg); color: var(--green); font-weight: 700; }
 
+        /* GitHub icon bottom-right */
+        .bottom-right { position: fixed; bottom: 20px; right: 24px; z-index: 50; }
+        .bottom-right a { color: var(--text2); transition: color .2s; }
+        .bottom-right a:hover { color: var(--text); }
+        .bottom-right svg { width: 28px; height: 28px; }
+
+        .loading { text-align: center; padding: 80px; color: var(--text2); font-size: 15px; grid-column: 1 / -1; }
+        .error-msg { text-align: center; padding: 80px; color: var(--red); font-size: 15px; grid-column: 1 / -1; }
+        .no-results { text-align: center; padding: 40px; color: var(--text2); font-size: 14px; grid-column: 1 / -1; }
+
+        @media (max-width: 1024px) {
+            .monitors-grid { grid-template-columns: repeat(2, 1fr); }
+        }
         @media (max-width: 640px) {
-            .mon-stats { display: none; }
+            .monitors-grid { grid-template-columns: 1fr; }
+            .toolbar { flex-direction: column; }
+            .search-wrap { min-width: 100%; }
+            .top-bar { padding: 12px 16px; }
+            .page { padding: 0 16px 80px; }
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="sp-header">
-            <h1 id="spName">Service Status</h1>
-            <p id="spDesc"></p>
+    <!-- Top Navigation Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <a class="back-btn" href="/" title="Back to Dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                Dashboard
+            </a>
+            <span class="top-bar-brand">VyanaWatch</span>
         </div>
-        <div id="banner"></div>
-        <div class="monitors" id="monitorList">
-            <div class="loading">Loading status...</div>
-        </div>
-        <div class="sp-footer">
-            Powered by <a href="#">VyanaWatch</a> &mdash; Updated <span id="lastUpdated"></span>
+        <div class="top-bar-right">
+            <button class="icon-btn" id="chartBtn" title="Response time chart" onclick="alert('Chart view coming soon')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </button>
+            <button class="icon-btn" id="refreshBtn" title="Refresh now" onclick="loadData()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+            <button class="icon-btn" id="darkToggle" title="Toggle dark mode">
+                <svg id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg id="moonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
         </div>
     </div>
+
+    <div class="page">
+        <div class="sp-header">
+            <h1 id="spName">Health Dashboard</h1>
+            <p id="spDesc">Monitor the health of your endpoints in real-time</p>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="searchInput" placeholder="Search endpoints...">
+            </div>
+            <div class="toolbar-group">
+                <span class="toolbar-label">Filter by:</span>
+                <select id="filterSelect">
+                    <option value="">None</option>
+                    <option value="up">Healthy</option>
+                    <option value="down">Unhealthy</option>
+                    <option value="paused">Paused</option>
+                </select>
+            </div>
+            <div class="toolbar-group">
+                <span class="toolbar-label">Sort by:</span>
+                <select id="sortSelect">
+                    <option value="name">Name</option>
+                    <option value="status">Status</option>
+                    <option value="latency">Latency</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="banner"></div>
+
+        <div class="monitors-grid" id="monitorGrid">
+            <div class="loading">Loading status...</div>
+        </div>
+
+        <div class="sp-footer">
+            Powered by <a href="#">VyanaWatch</a>
+        </div>
+    </div>
+
+    <!-- Tooltip (single reusable element) -->
+    <div class="tick-tooltip" id="tickTooltip"></div>
+
+    <!-- Bottom-left: Refresh interval -->
+    <div class="refresh-control">
+        <div class="interval-select">
+            <button class="interval-btn" id="intervalBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                <span id="intervalLabel">5m</span>
+            </button>
+            <div class="interval-dropdown" id="intervalDropdown">
+                <div class="iv-opt" data-sec="10">10s</div>
+                <div class="iv-opt" data-sec="30">30s</div>
+                <div class="iv-opt" data-sec="60">1m</div>
+                <div class="iv-opt" data-sec="120">2m</div>
+                <div class="iv-opt active" data-sec="300">5m</div>
+                <div class="iv-opt" data-sec="600">10m</div>
+            </div>
+        </div>
+        <button class="refresh-btn" title="Refresh now" onclick="loadData()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+    </div>
+
     <script>
+    // Expose loadData globally for onclick
+    var loadData;
     (function() {
         const slug = window.location.pathname.split('/').pop();
+        let allMonitors = [];
+        let refreshSec = 300;
+        let remaining = refreshSec;
+        let countdownTimer;
 
-        async function load() {
+        // ===== DARK MODE =====
+        function initDarkMode() {
+            const saved = localStorage.getItem('vyanawatch-dark');
+            if (saved === 'true' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+            updateDarkIcons();
+        }
+        function toggleDark() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('vyanawatch-dark', document.documentElement.classList.contains('dark'));
+            updateDarkIcons();
+        }
+        function updateDarkIcons() {
+            const dark = document.documentElement.classList.contains('dark');
+            document.getElementById('sunIcon').style.display = dark ? 'none' : 'block';
+            document.getElementById('moonIcon').style.display = dark ? 'block' : 'none';
+        }
+        document.getElementById('darkToggle').addEventListener('click', toggleDark);
+        initDarkMode();
+
+        // ===== DATA =====
+        loadData = async function() {
             try {
                 const res = await fetch('/api/v1/status/' + encodeURIComponent(slug));
                 if (!res.ok) throw new Error('Status page not found');
                 const data = await res.json();
-                render(data);
+                document.getElementById('spName').textContent = data.name || 'Health Dashboard';
+                document.getElementById('pageTitle').textContent = (data.name || 'Health Dashboard') + ' — VyanaWatch';
+                if (data.description) document.getElementById('spDesc').textContent = data.description;
+
+                allMonitors = (data.monitors || []).map(m => {
+                    const stats = m.uptime_stats || {};
+                    return {
+                        name: m.name,
+                        type: (m.type || 'web').toLowerCase(),
+                        target: m.url || m.hostname || m.keyword || '',
+                        status: m.status || 'pending',
+                        latency: stats.avg_latency != null ? Math.round(stats.avg_latency) : null,
+                        uptime30d: stats.uptime_30d,
+                        expectedStatus: m.expected_status_code || 200,
+                        timeout: m.timeout || 10,
+                        sslCheck: m.ssl_check,
+                        sslExpiryDays: m.ssl_expiry_days || 30,
+                        heartbeats: m.recent_heartbeats || []
+                    };
+                });
+
+                renderBanner();
+                applyFilters();
+                remaining = refreshSec;
             } catch (e) {
-                document.getElementById('monitorList').innerHTML = '<div class="error-msg">' + esc(e.message) + '</div>';
+                document.getElementById('monitorGrid').innerHTML = '<div class="error-msg">' + esc(e.message) + '</div>';
             }
+        };
+
+        // ===== BANNER =====
+        function renderBanner() {
+            if (allMonitors.length === 0) { document.getElementById('banner').innerHTML = ''; return; }
+            const down = allMonitors.filter(m => m.status === 'down').length;
+            document.getElementById('banner').innerHTML = down > 0
+                ? '<div class="status-banner some-down">' + down + ' endpoint' + (down > 1 ? 's are' : ' is') + ' experiencing issues</div>'
+                : '<div class="status-banner all-up">All systems operational &mdash; everything looks good!</div>';
         }
 
-        function render(data) {
-            document.getElementById('spName').textContent = data.name || 'Service Status';
-            document.getElementById('pageTitle').textContent = (data.name || 'Status') + ' — VyanaWatch';
-            if (data.description) document.getElementById('spDesc').textContent = data.description;
-            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+        // ===== FILTER / SORT =====
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filter = document.getElementById('filterSelect').value;
+            const sort = document.getElementById('sortSelect').value;
 
-            const monitors = data.monitors || [];
-            const anyDown = monitors.some(m => m.status === 'down');
-            document.getElementById('banner').innerHTML = monitors.length === 0
-                ? ''
-                : anyDown
-                    ? '<div class="status-banner some-down">Some services are experiencing issues</div>'
-                    : '<div class="status-banner all-up">All systems operational</div>';
+            let list = allMonitors.filter(m => {
+                if (q && !m.name.toLowerCase().includes(q) && !m.target.toLowerCase().includes(q)) return false;
+                if (filter && m.status !== filter) return false;
+                return true;
+            });
 
+            if (sort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
+            else if (sort === 'status') list.sort((a, b) => statusOrder(a.status) - statusOrder(b.status));
+            else if (sort === 'latency') list.sort((a, b) => (a.latency || 9999) - (b.latency || 9999));
+
+            renderGrid(list);
+        }
+
+        function statusOrder(s) { return s === 'down' ? 0 : s === 'paused' ? 1 : s === 'pending' ? 2 : 3; }
+
+        // ===== RENDER GRID =====
+        function renderGrid(monitors) {
+            const grid = document.getElementById('monitorGrid');
             if (monitors.length === 0) {
-                document.getElementById('monitorList').innerHTML = '<div class="loading">No monitors on this status page.</div>';
+                grid.innerHTML = '<div class="no-results">No endpoints match your criteria</div>';
                 return;
             }
 
-            document.getElementById('monitorList').innerHTML = monitors.map(m => {
-                const stats = m.uptime_stats || {};
-                const uptime = stats.uptime_30d != null ? stats.uptime_30d.toFixed(2) : '-';
-                const latency = stats.avg_latency != null ? Math.round(stats.avg_latency) : '-';
-                return `
-                <div class="mon-card">
-                    <div class="mon-dot ${m.status}"></div>
-                    <div class="mon-info">
-                        <div class="mon-name">${esc(m.name)}</div>
-                        <div class="mon-meta">${m.status.toUpperCase()} &middot; ${uptime}% uptime (30d)</div>
-                    </div>
-                    <div class="mon-stats">
-                        <div class="mon-stat"><div class="mon-stat-val">${uptime}%</div><div class="mon-stat-lbl">Uptime</div></div>
-                        <div class="mon-stat"><div class="mon-stat-val">${latency}ms</div><div class="mon-stat-lbl">Latency</div></div>
-                    </div>
-                </div>`;
-            }).join('');
+            grid.innerHTML = monitors.map((m, idx) => {
+                const badgeLabel = m.status === 'up' ? 'Healthy' : m.status === 'down' ? 'Unhealthy' : m.status === 'paused' ? 'Paused' : 'Pending';
+                const latencyStr = m.latency != null ? '~' + m.latency + 'ms' : '—';
+                const hb = m.heartbeats;
+                const tickCount = 50;
+                let ticks = '';
+                for (let i = 0; i < tickCount; i++) {
+                    const beat = hb[i];
+                    const cls = beat ? (beat.status === 'up' ? 'up' : 'down') : 'empty';
+                    const dataAttr = beat ? ' data-beat=\'' + JSON.stringify({
+                        ts: beat.created_at,
+                        rt: beat.response_time,
+                        st: beat.status,
+                        sc: beat.status_code || (beat.status === 'up' ? m.expectedStatus : 0),
+                        es: m.expectedStatus,
+                        to: m.timeout,
+                        ssl: m.sslCheck,
+                        sslDays: m.sslExpiryDays
+                    }).replace(/'/g, '&#39;') + '\'' : '';
+                    ticks += '<div class="tick ' + cls + '" style="animation-delay:' + (i * 15) + 'ms"' + dataAttr + '></div>';
+                }
+                const oldest = hb.length > 0 ? timeAgo(new Date(hb[0].created_at)) : '';
+                const newest = hb.length > 0 ? timeAgo(new Date(hb[hb.length - 1].created_at)) : '';
 
-            // Apply custom CSS if provided
-            if (data.custom_css) {
-                const style = document.createElement('style');
-                style.textContent = data.custom_css;
-                document.head.appendChild(style);
+                return '<div class="mon-card" style="animation-delay:' + (idx * 40) + 'ms">' +
+                    '<div class="card-top">' +
+                        '<span class="card-name">' + esc(m.name) + '</span>' +
+                        '<span class="health-badge ' + m.status + '"><span class="dot"></span>' + badgeLabel + '</span>' +
+                    '</div>' +
+                    '<div class="card-meta">' + m.type + ' &bull; ' + esc(m.target) + '</div>' +
+                    '<div class="card-latency">' + latencyStr + '</div>' +
+                    '<div class="hb-bar">' + ticks + '</div>' +
+                    '<div class="hb-range"><span>' + oldest + '</span><span>' + newest + '</span></div>' +
+                '</div>';
+            }).join('');
+        }
+
+        // ===== TICK TOOLTIP =====
+        const tooltip = document.getElementById('tickTooltip');
+        document.addEventListener('mouseover', function(e) {
+            const tick = e.target.closest('.tick');
+            if (!tick || !tick.dataset.beat) { tooltip.style.display = 'none'; return; }
+            const d = JSON.parse(tick.dataset.beat);
+            const dt = new Date(d.ts);
+            const tsStr = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate()) + '  ' +
+                          pad(dt.getHours()) + ':' + pad(dt.getMinutes()) + ':' + pad(dt.getSeconds());
+            const isUp = d.st === 'up';
+            const statusCode = d.sc || 0;
+            const expectedStatus = d.es || 200;
+            const timeout = d.to || 10;
+            const responseTime = d.rt || 0;
+
+            let conditions = '';
+            // Condition 1: [STATUS] == expected
+            const statusPass = statusCode === expectedStatus;
+            conditions += '<div class="tt-condition"><span class="' + (statusPass ? 'check' : 'cross') + '">' + (statusPass ? '&#x2713;' : '&#x2717;') + '</span>[STATUS] == ' + expectedStatus + '</div>';
+            // Condition 2: [RESPONSE_TIME] < timeout * 1000
+            const rtLimit = timeout * 1000;
+            const rtPass = responseTime < rtLimit;
+            conditions += '<div class="tt-condition"><span class="' + (rtPass ? 'check' : 'cross') + '">' + (rtPass ? '&#x2713;' : '&#x2717;') + '</span>[RESPONSE_TIME] &lt; ' + rtLimit + '</div>';
+            // Condition 3: SSL (if enabled)
+            if (d.ssl) {
+                conditions += '<div class="tt-condition"><span class="check">&#x2713;</span>[CERTIFICATE_EXPIRATION] &gt; ' + (d.sslDays || 30) * 24 + 'h</div>';
             }
+
+            tooltip.innerHTML =
+                '<div class="tt-section"><div class="tt-label">TIMESTAMP</div><div class="tt-value ' + (isUp ? 'green' : 'red') + '">' + tsStr + '</div></div>' +
+                '<div class="tt-section"><div class="tt-label">RESPONSE TIME</div><div class="tt-value">' + responseTime + 'ms</div></div>' +
+                '<div class="tt-section"><div class="tt-label">CONDITIONS</div>' + conditions + '</div>';
+
+            tooltip.style.display = 'block';
+            positionTooltip(tick);
+        });
+        document.addEventListener('mouseout', function(e) {
+            if (e.target.closest('.tick')) tooltip.style.display = 'none';
+        });
+
+        function positionTooltip(tick) {
+            const r = tick.getBoundingClientRect();
+            const tw = tooltip.offsetWidth;
+            const th = tooltip.offsetHeight;
+            let left = r.left + r.width / 2 - tw / 2;
+            let top = r.top - th - 10;
+            if (top < 8) top = r.bottom + 10;
+            if (left < 8) left = 8;
+            if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+        }
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+
+        // ===== REFRESH INTERVAL DROPDOWN =====
+        const intervalBtn = document.getElementById('intervalBtn');
+        const intervalDrop = document.getElementById('intervalDropdown');
+        const intervalLabel = document.getElementById('intervalLabel');
+
+        intervalBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            intervalDrop.classList.toggle('open');
+        });
+        document.addEventListener('click', function() { intervalDrop.classList.remove('open'); });
+
+        intervalDrop.querySelectorAll('.iv-opt').forEach(function(opt) {
+            opt.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const sec = parseInt(this.dataset.sec);
+                refreshSec = sec;
+                remaining = sec;
+                intervalLabel.textContent = this.textContent;
+                intervalDrop.querySelectorAll('.iv-opt').forEach(function(o) { o.classList.remove('active'); });
+                this.classList.add('active');
+                intervalDrop.classList.remove('open');
+            });
+        });
+
+        // ===== HELPERS =====
+        function timeAgo(date) {
+            const sec = Math.floor((Date.now() - date.getTime()) / 1000);
+            if (sec < 60) return sec + ' seconds ago';
+            if (sec < 3600) return Math.floor(sec / 60) + ' minutes ago';
+            if (sec < 86400) return Math.floor(sec / 3600) + ' hours ago';
+            return Math.floor(sec / 86400) + ' days ago';
         }
 
         function esc(s) {
@@ -148,9 +571,20 @@
             return d.innerHTML;
         }
 
-        load();
-        // Auto-refresh every 60 seconds
-        setInterval(load, 60000);
+        // ===== COUNTDOWN =====
+        function updateCountdown() {
+            remaining--;
+            if (remaining <= 0) { loadData(); return; }
+        }
+
+        // ===== EVENTS =====
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('filterSelect').addEventListener('change', applyFilters);
+        document.getElementById('sortSelect').addEventListener('change', applyFilters);
+
+        // ===== INIT =====
+        loadData();
+        countdownTimer = setInterval(updateCountdown, 1000);
     })();
     </script>
 </body>
