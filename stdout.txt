@@ -1,0 +1,17 @@
+
+ __     __                    __        __    _       _     
+ \ \   / /   _  __ _ _ __   __ \ \      / /_ _| |_ ___| |__  
+  \ \ / / | | |/ _' | '_ \ / _' \ \ /\ / / _' | __/ __| '_ \ 
+   \ V /| |_| | (_| | | | | (_| |\ V  V / (_| | || (__| | | |
+    \_/  \__, |\__,_|_| |_|\__,_| \_/\_/ \__,_|\__\___|_| |_|
+         |___/                                                 
+    Lightweight Self-Hosted Uptime Monitor
+{"level":"warn","time":1773251966,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/config/config.go:122","message":"No config file found, using defaults and environment variables"}
+{"level":"info","version":"dev","port":8080,"db_driver":"sqlite","time":1773251966,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/main.go:48","message":"Starting VyanaWatch"}
+{"level":"info","driver":"sqlite","time":1773251967,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/db/database.go:56","message":"Database initialized"}
+{"level":"info","time":1773251967,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/main.go:54","message":"Database ready"}
+{"level":"info","channels":0,"time":1773251967,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/alert/alert.go:47","message":"Alert dispatcher initialized"}
+{"level":"info","count":0,"time":1773251967,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/monitor/monitor.go:89","message":"Starting monitoring engine"}
+{"level":"info","time":1773251967,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/main.go:106","message":"VyanaWatch is ready on http://0.0.0.0:8080"}
+{"level":"info","addr":"0.0.0.0:8080","time":1773251967,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/api/routes.go:54","message":"HTTP server starting"}
+{"level":"info","id":1,"name":"Google","type":"http","interval":60,"time":1773251969,"caller":"C:/Users/acer/OneDrive - cytroksys/Documents/Projects/Project 12/vyanawatch/monitor/monitor.go:190","message":"Starting monitor worker"}

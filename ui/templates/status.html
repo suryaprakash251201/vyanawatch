@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Status Page — VyanaWatch</title>
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --surface: #ffffff;
+            --border: #e5e7eb;
+            --text: #1f2937;
+            --text2: #6b7280;
+            --green: #10b981;
+            --red: #ef4444;
+            --orange: #f59e0b;
+            --blue: #3b82f6;
+            --accent: #6c5ce7;
+            --radius: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .page { max-width: 760px; margin: 0 auto; padding: 40px 20px; }
+
+        /* Header */
+        .sp-header { text-align: center; margin-bottom: 32px; }
+        .sp-header h1 { font-size: 26px; font-weight: 700; }
+        .sp-header p { color: var(--text2); margin-top: 6px; font-size: 14px; }
+
+        /* Overall Status Banner */
+        .status-banner { border-radius: var(--radius); padding: 18px 24px; text-align: center; font-weight: 600; font-size: 15px; margin-bottom: 28px; }
+        .status-banner.all-up { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .status-banner.some-down { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+
+        /* Monitor Cards */
+        .monitors { display: flex; flex-direction: column; gap: 10px; }
+        .mon-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+        .mon-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .mon-dot.up { background: var(--green); }
+        .mon-dot.down { background: var(--red); }
+        .mon-dot.paused { background: var(--orange); }
+        .mon-dot.pending { background: var(--blue); }
+        .mon-info { flex: 1; }
+        .mon-name { font-weight: 600; font-size: 15px; }
+        .mon-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+        .mon-stats { display: flex; gap: 18px; }
+        .mon-stat { text-align: right; }
+        .mon-stat-val { font-size: 14px; font-weight: 600; }
+        .mon-stat-lbl { font-size: 10px; color: var(--text2); text-transform: uppercase; }
+
+        /* Uptime bars */
+        .uptime-row { display: flex; gap: 1px; height: 28px; align-items: flex-end; margin-top: 8px; }
+        .uptime-row .tick { flex: 1; border-radius: 2px; min-height: 4px; }
+        .uptime-row .tick.up { background: var(--green); height: 100%; }
+        .uptime-row .tick.down { background: var(--red); height: 100%; }
+        .uptime-row .tick.empty { background: #e5e7eb; height: 30%; }
+
+        /* Footer */
+        .sp-footer { text-align: center; margin-top: 40px; color: var(--text2); font-size: 12px; }
+        .sp-footer a { color: var(--accent); text-decoration: none; }
+
+        .loading { text-align: center; padding: 60px; color: var(--text2); }
+        .error-msg { text-align: center; padding: 60px; color: var(--red); }
+
+        @media (max-width: 640px) {
+            .mon-stats { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="sp-header">
+            <h1 id="spName">Service Status</h1>
+            <p id="spDesc"></p>
+        </div>
+        <div id="banner"></div>
+        <div class="monitors" id="monitorList">
+            <div class="loading">Loading status...</div>
+        </div>
+        <div class="sp-footer">
+            Powered by <a href="#">VyanaWatch</a> &mdash; Updated <span id="lastUpdated"></span>
+        </div>
+    </div>
+    <script>
+    (function() {
+        const slug = window.location.pathname.split('/').pop();
+
+        async function load() {
+            try {
+                const res = await fetch('/api/v1/status/' + encodeURIComponent(slug));
+                if (!res.ok) throw new Error('Status page not found');
+                const data = await res.json();
+                render(data);
+            } catch (e) {
+                document.getElementById('monitorList').innerHTML = '<div class="error-msg">' + esc(e.message) + '</div>';
+            }
+        }
+
+        function render(data) {
+            document.getElementById('spName').textContent = data.name || 'Service Status';
+            document.getElementById('pageTitle').textContent = (data.name || 'Status') + ' — VyanaWatch';
+            if (data.description) document.getElementById('spDesc').textContent = data.description;
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+
+            const monitors = data.monitors || [];
+            const anyDown = monitors.some(m => m.status === 'down');
+            document.getElementById('banner').innerHTML = monitors.length === 0
+                ? ''
+                : anyDown
+                    ? '<div class="status-banner some-down">Some services are experiencing issues</div>'
+                    : '<div class="status-banner all-up">All systems operational</div>';
+
+            if (monitors.length === 0) {
+                document.getElementById('monitorList').innerHTML = '<div class="loading">No monitors on this status page.</div>';
+                return;
+            }
+
+            document.getElementById('monitorList').innerHTML = monitors.map(m => {
+                const stats = m.uptime_stats || {};
+                const uptime = stats.uptime_30d != null ? stats.uptime_30d.toFixed(2) : '-';
+                const latency = stats.avg_latency != null ? Math.round(stats.avg_latency) : '-';
+                return `
+                <div class="mon-card">
+                    <div class="mon-dot ${m.status}"></div>
+                    <div class="mon-info">
+                        <div class="mon-name">${esc(m.name)}</div>
+                        <div class="mon-meta">${m.status.toUpperCase()} &middot; ${uptime}% uptime (30d)</div>
+                    </div>
+                    <div class="mon-stats">
+                        <div class="mon-stat"><div class="mon-stat-val">${uptime}%</div><div class="mon-stat-lbl">Uptime</div></div>
+                        <div class="mon-stat"><div class="mon-stat-val">${latency}ms</div><div class="mon-stat-lbl">Latency</div></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Apply custom CSS if provided
+            if (data.custom_css) {
+                const style = document.createElement('style');
+                style.textContent = data.custom_css;
+                document.head.appendChild(style);
+            }
+        }
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s || '';
+            return d.innerHTML;
+        }
+
+        load();
+        // Auto-refresh every 60 seconds
+        setInterval(load, 60000);
+    })();
+    </script>
+</body>
+</html>

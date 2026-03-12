@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VyanaWatch — Uptime Monitor</title>
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --text: #1e293b;
+            --text2: #64748b;
+            --text3: #94a3b8;
+            --green: #22c55e;
+            --green-dark: #16a34a;
+            --green-light: #dcfce7;
+            --red: #ef4444;
+            --red-light: #fee2e2;
+            --orange: #f59e0b;
+            --orange-light: #fef3c7;
+            --blue: #3b82f6;
+            --blue-light: #dbeafe;
+            --purple: #8b5cf6;
+            --sidebar-w: 340px;
+            --header-h: 56px;
+            --radius: 10px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+            --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.04);
+            --transition: .2s cubic-bezier(.4,0,.2,1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+        /* ── Header ── */
+        .header {
+            background: var(--white); border-bottom: 1px solid var(--border);
+            height: var(--header-h); padding: 0 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+        .header-left { display: flex; align-items: center; gap: 24px; }
+        .logo { font-size: 20px; font-weight: 700; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .logo svg { width: 28px; height: 28px; }
+        .logo .accent { color: var(--green); }
+        .nav-links { display: flex; gap: 4px; align-items: center; }
+        .nav-link { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text2); text-decoration: none; transition: all var(--transition); display: inline-flex; align-items: center; gap: 6px; }
+        .nav-link:hover { background: var(--bg); color: var(--text); }
+        .nav-link.active { background: var(--green); color: #fff; box-shadow: 0 2px 4px rgba(34,197,94,.3); }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .conn-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); padding: 4px 10px; border-radius: 20px; background: var(--bg); }
+        .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s infinite; }
+        .conn-dot.disconnected { background: var(--red); animation: pulse-dot-red 1.5s infinite; }
+        @keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+        @keyframes pulse-dot-red { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.4); } 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--green), var(--green-dark)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; box-shadow: 0 2px 4px rgba(34,197,94,.2); }
+
+        /* ── Layout ── */
+        .app-layout { display: flex; margin-top: var(--header-h); min-height: calc(100vh - var(--header-h)); }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; position: fixed; top: var(--header-h);
+            bottom: 0; left: 0; z-index: 50; overflow: hidden;
+        }
+        .sidebar-header { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+        .sidebar-search {
+            width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 13px; outline: none; background: var(--bg); color: var(--text); transition: all var(--transition);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.24 1.144a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: 10px center;
+        }
+        .sidebar-search:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.12); background-color: var(--white); }
+        .sidebar-filters { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+        .filter-pill {
+            padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer;
+            border: 1px solid var(--border); background: var(--white); color: var(--text2); transition: all var(--transition);
+        }
+        .filter-pill:hover { background: var(--bg); border-color: var(--text3); }
+        .filter-pill.active { background: var(--green); color: #fff; border-color: var(--green); box-shadow: 0 2px 4px rgba(34,197,94,.2); }
+        .sidebar-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+        .sidebar-item {
+            padding: 12px 16px; cursor: pointer; border-left: 3px solid transparent;
+            transition: all var(--transition); display: flex; align-items: center; gap: 12px;
+            margin: 1px 0;
+        }
+        .sidebar-item:hover { background: #f8fafc; }
+        .sidebar-item.selected { background: var(--green-light); border-left-color: var(--green); }
+        .sidebar-item .si-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; transition: all var(--transition); position: relative; }
+        .sidebar-item .si-dot.up { background: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+        .sidebar-item .si-dot.down { background: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,.15); animation: pulse-status 1.5s infinite; }
+        .sidebar-item .si-dot.paused { background: var(--orange); box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
+        .sidebar-item .si-dot.pending { background: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.15); animation: pulse-status-blue 2s infinite; }
+        @keyframes pulse-status { 0%,100%{box-shadow:0 0 0 3px rgba(239,68,68,.15)} 50%{box-shadow:0 0 0 6px rgba(239,68,68,.08)} }
+        @keyframes pulse-status-blue { 0%,100%{box-shadow:0 0 0 3px rgba(59,130,246,.15)} 50%{box-shadow:0 0 0 6px rgba(59,130,246,.08)} }
+        .sidebar-item .si-body { flex: 1; min-width: 0; }
+        .sidebar-item .si-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+        .sidebar-item .si-heartbeats { display: flex; gap: 1.5px; margin-top: 6px; height: 22px; align-items: flex-end; }
+        .sidebar-item .hb-tick {
+            width: 3px; border-radius: 1.5px; min-height: 4px; height: 100%;
+            transition: all .3s ease; animation: tick-grow .4s ease-out both;
+        }
+        .sidebar-item .hb-tick.up { background: linear-gradient(to top, #22c55e, #4ade80); }
+        .sidebar-item .hb-tick.down { background: linear-gradient(to top, #ef4444, #f87171); }
+        .sidebar-item .hb-tick.empty { background: #e2e8f0; }
+        @keyframes tick-grow { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+        .sidebar-item .si-uptime { font-size: 12px; font-weight: 700; color: var(--green); flex-shrink: 0; }
+        .sidebar-item .si-uptime.down-pct { color: var(--red); }
+        .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
+        .btn-add {
+            width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 14px;
+            font-weight: 600; cursor: pointer; background: linear-gradient(135deg, var(--green), var(--green-dark)); color: #fff;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all var(--transition); box-shadow: 0 2px 4px rgba(34,197,94,.2);
+        }
+        .btn-add:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(34,197,94,.3); }
+
+        /* ── Main Content ── */
+        .main { flex: 1; margin-left: var(--sidebar-w); padding: 24px 32px; min-height: calc(100vh - var(--header-h)); }
+
+        /* ── Views (only one visible at a time) ── */
+        .view { display: none; animation: fadeIn .25s ease; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Dashboard View ── */
+        .quick-stats { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+        .qs-card {
+            flex: 1; min-width: 120px; background: var(--white); border-radius: var(--radius);
+            padding: 20px; text-align: center; border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm); transition: all var(--transition);
+        }
+        .qs-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+        .qs-card .qs-num { font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -0.5px; }
+        .qs-card .qs-label { font-size: 11px; color: var(--text2); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+        .qs-num.up { color: var(--green); }
+        .qs-num.down { color: var(--red); }
+        .qs-num.paused { color: var(--orange); }
+        .qs-num.pending { color: var(--blue); }
+        .qs-num.total { color: var(--text); }
+
+        /* Events Table */
+        .events-section { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; }
+        .events-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: #fafbfc; }
+        .events-header h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .events-header h3 .ev-count { font-size: 11px; background: var(--bg); color: var(--text2); padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+        .events-header .btn-clear { padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; background: var(--white); color: var(--text2); transition: all var(--transition); }
+        .events-header .btn-clear:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+        .events-table { width: 100%; border-collapse: collapse; }
+        .events-table th { text-align: left; padding: 10px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text3); border-bottom: 1px solid var(--border); background: #fafbfc; }
+        .events-table td { padding: 12px 20px; font-size: 13px; border-bottom: 1px solid var(--border-light); }
+        .events-table tr { transition: background var(--transition); }
+        .events-table tr:hover { background: #f8fafc; }
+        .events-table tr:last-child td { border-bottom: none; }
+        .events-table .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-up { background: var(--green-light); color: #15803d; }
+        .badge-down { background: var(--red-light); color: #b91c1c; }
+        .badge-paused { background: var(--orange-light); color: #a16207; }
+        .badge-created { background: var(--blue-light); color: #1d4ed8; }
+        .badge-deleted { background: #f1f5f9; color: #475569; }
+        .events-empty { padding: 48px 20px; text-align: center; color: var(--text3); font-size: 13px; }
+
+        /* ── Monitor Detail View ── */
+        .detail-top { margin-bottom: 20px; }
+        .detail-name-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+        .detail-name { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
+        .detail-id { font-size: 13px; color: var(--text3); background: var(--bg); padding: 2px 10px; border-radius: 12px; font-weight: 600; }
+        .detail-url { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+        .detail-url a { color: var(--blue); text-decoration: none; }
+        .detail-url a:hover { text-decoration: underline; }
+        .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all var(--transition); display: inline-flex; align-items: center; gap: 5px; }
+        .btn-outline { background: var(--white); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+        .btn-outline:hover { background: var(--bg); box-shadow: var(--shadow); transform: translateY(-1px); }
+        .btn-danger { background: var(--white); color: var(--red); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+        .btn-danger:hover { background: var(--red-light); border-color: var(--red); transform: translateY(-1px); }
+        .btn-green { background: linear-gradient(135deg, var(--green), var(--green-dark)); color: #fff; border: none; box-shadow: 0 2px 4px rgba(34,197,94,.2); }
+        .btn-green:hover { box-shadow: 0 4px 8px rgba(34,197,94,.3); transform: translateY(-1px); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        /* Heartbeat bar (detail view) */
+        .heartbeat-section { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+        .heartbeat-bar { display: flex; gap: 2px; height: 34px; align-items: flex-end; margin-bottom: 12px; }
+        .heartbeat-bar .hb {
+            width: 100%; max-width: 6px; flex: 1; border-radius: 2px; min-height: 6px; height: 100%;
+            cursor: default; transition: all .2s ease; position: relative;
+            animation: hb-fade-in .5s ease both;
+        }
+        .heartbeat-bar .hb:hover { opacity: 0.7; transform: scaleY(1.15); }
+        .heartbeat-bar .hb.up { background: linear-gradient(to top, #22c55e, #86efac); }
+        .heartbeat-bar .hb.down { background: linear-gradient(to top, #ef4444, #fca5a5); }
+        .heartbeat-bar .hb.empty { background: #e2e8f0; }
+        @keyframes hb-fade-in { from { opacity: 0; transform: scaleY(0.3); } to { opacity: 1; transform: scaleY(1); } }
+        .heartbeat-meta { display: flex; justify-content: space-between; align-items: center; }
+        .status-pill { padding: 5px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+        .status-pill.up { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(34,197,94,.25); }
+        .status-pill.down { background: var(--red); color: #fff; box-shadow: 0 2px 8px rgba(239,68,68,.25); animation: pill-pulse 1.5s infinite; }
+        .status-pill.paused { background: var(--orange); color: #fff; }
+        .status-pill.pending { background: var(--blue); color: #fff; }
+        @keyframes pill-pulse { 0%,100%{box-shadow:0 2px 8px rgba(239,68,68,.25)} 50%{box-shadow:0 2px 16px rgba(239,68,68,.4)} }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-bottom: 20px; }
+        .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); transition: all var(--transition); }
+        .stat-card:hover { box-shadow: var(--shadow); }
+        .stat-card .sc-val { font-size: 22px; font-weight: 700; color: var(--text); }
+        .stat-card .sc-val.green { color: var(--green); }
+        .stat-card .sc-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .3px; margin-top: 4px; font-weight: 600; }
+
+        /* Chart */
+        .chart-section { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+        .chart-section h3 { font-size: 14px; margin-bottom: 14px; font-weight: 700; }
+        .chart-canvas { width: 100%; height: 180px; border-radius: 6px; }
+
+        /* Incidents */
+        .incidents-section { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow: hidden; }
+        .incidents-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 700; background: #fafbfc; }
+        .incident-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border-light); font-size: 13px; transition: background var(--transition); }
+        .incident-row:hover { background: #f8fafc; }
+        .incident-row:last-child { border-bottom: none; }
+        .incident-cause { color: var(--red); font-weight: 600; }
+        .incident-resolved { color: var(--green); font-size: 12px; font-weight: 600; }
+        .incident-open { color: var(--red); font-size: 12px; font-weight: 700; }
+
+        /* ── Add/Edit Monitor View ── */
+        .form-view-title { font-size: 22px; font-weight: 800; margin-bottom: 20px; letter-spacing: -0.3px; }
+        .form-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .form-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; box-shadow: var(--shadow-sm); }
+        .form-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 13px; outline: none; background: var(--white); color: var(--text); transition: all var(--transition);
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+        .form-group select { appearance: auto; }
+        .form-group .hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-actions { margin-top: 20px; display: flex; gap: 10px; }
+
+        /* ── Toast ── */
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column-reverse; gap: 8px; }
+        .toast {
+            padding: 14px 20px; border-radius: var(--radius); font-size: 13px; font-weight: 500;
+            animation: toastIn .35s cubic-bezier(.4,0,.2,1); min-width: 280px; box-shadow: var(--shadow-lg);
+            display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px);
+        }
+        .toast.success { background: var(--green); color: #fff; }
+        .toast.error { background: var(--red); color: #fff; }
+        .toast.info { background: var(--blue); color: #fff; }
+        @keyframes toastIn { from { transform: translateY(20px) scale(.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+        /* ── Empty State ── */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+        .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .sidebar { width: 260px; }
+            .main { margin-left: 260px; padding: 20px; }
+            .form-layout { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; padding: 14px; }
+            .quick-stats { flex-direction: column; }
+            .form-layout { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .header-left .nav-links { display: none; }
+        }
+
+        /* Scrollbar */
+        .sidebar-list::-webkit-scrollbar { width: 5px; }
+        .sidebar-list::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .sidebar-list::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+    <!-- ── Header ── -->
+    <div class="header">
+        <div class="header-left">
+            <a class="logo" href="/">
+                <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#22c55e" stroke-width="3"/><polyline points="8,18 14,12 18,20 24,10" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Vyana<span class="accent">Watch</span></span>
+            </a>
+            <div class="nav-links">
+                <button class="nav-link active" id="navDashboard" onclick="showView('dashboard')">Dashboard</button>
+                <a class="nav-link" href="/status/default" target="_blank">Status Pages</a>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="conn-badge">
+                <span class="conn-dot" id="connDot"></span>
+                <span id="connLabel">Connecting...</span>
+            </div>
+            <a id="logoutBtn" class="nav-link" href="/logout" style="display:none" title="Sign Out">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8"/></svg>
+                Logout
+            </a>
+            <div class="avatar" id="avatarBadge" title="VyanaWatch">V</div>
+        </div>
+    </div>
+
+    <!-- ── App Layout ── -->
+    <div class="app-layout">
+        <!-- ── Sidebar ── -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <input type="text" class="sidebar-search" placeholder="Search..." oninput="filterMonitors(this.value)" id="searchBox">
+                <div class="sidebar-filters">
+                    <button class="filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</button>
+                    <button class="filter-pill" data-filter="up" onclick="setFilter('up',this)">Up</button>
+                    <button class="filter-pill" data-filter="down" onclick="setFilter('down',this)">Down</button>
+                    <button class="filter-pill" data-filter="paused" onclick="setFilter('paused',this)">Paused</button>
+                </div>
+            </div>
+            <div class="sidebar-list" id="sidebarList"></div>
+            <div class="sidebar-footer">
+                <button class="btn-add" onclick="openCreateView()">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+                    Add New Monitor
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Main Content ── -->
+        <div class="main">
+            <!-- Dashboard View -->
+            <div class="view active" id="viewDashboard">
+                <div class="quick-stats" id="quickStats">
+                    <div class="qs-card"><div class="qs-num up" id="sumUp">0</div><div class="qs-label">Up</div></div>
+                    <div class="qs-card"><div class="qs-num down" id="sumDown">0</div><div class="qs-label">Down</div></div>
+                    <div class="qs-card"><div class="qs-num paused" id="sumPaused">0</div><div class="qs-label">Paused</div></div>
+                    <div class="qs-card"><div class="qs-num pending" id="sumPending">0</div><div class="qs-label">Pending</div></div>
+                    <div class="qs-card"><div class="qs-num total" id="sumTotal">0</div><div class="qs-label">Total</div></div>
+                </div>
+                <div class="events-section">
+                    <div class="events-header">
+                        <h3>Recent Events <span class="ev-count" id="evCount">0</span></h3>
+                        <button class="btn-clear" onclick="clearEventLogs()">Clear All</button>
+                    </div>
+                    <table class="events-table">
+                        <thead><tr><th>Monitor</th><th>Event</th><th>Status</th><th>Time</th><th>Message</th></tr></thead>
+                        <tbody id="eventsBody">
+                            <tr><td colspan="5" class="events-empty">No recent events</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Monitor Detail View -->
+            <div class="view" id="viewDetail">
+                <div class="detail-top">
+                    <div class="detail-name-row">
+                        <span class="detail-name" id="detailName"></span>
+                        <span class="detail-id" id="detailId"></span>
+                    </div>
+                    <div class="detail-url" id="detailUrl"></div>
+                    <div class="detail-actions">
+                        <button class="btn btn-outline btn-sm" id="btnPauseResume" onclick="togglePause()">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="4" height="10" rx="1"/><rect x="7" y="1" width="4" height="10" rx="1"/></svg>
+                            Pause
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="openEditView()">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10H2v-2z"/></svg>
+                            Edit
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="cloneMonitor()">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8" rx="1"/><path d="M1 9V2a1 1 0 011-1h7"/></svg>
+                            Clone
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteMonitor()">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3h10M4 3V2a1 1 0 011-1h2a1 1 0 011 1v1M9.5 3v7a1 1 0 01-1 1h-5a1 1 0 01-1-1V3"/></svg>
+                            Delete
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="showView('dashboard')">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3L3 9M3 3l6 6"/></svg>
+                            Close
+                        </button>
+                    </div>
+                </div>
+                <div class="heartbeat-section">
+                    <div class="heartbeat-bar" id="heartbeatBar"></div>
+                    <div class="heartbeat-meta">
+                        <span class="status-pill" id="statusPill"></span>
+                        <span style="font-size:12px;color:var(--text2)" id="heartbeatInfo"></span>
+                    </div>
+                </div>
+                <div class="stats-grid" id="detailStats"></div>
+                <div class="chart-section">
+                    <h3>Response Time (24h)</h3>
+                    <canvas class="chart-canvas" id="chartCanvas"></canvas>
+                </div>
+                <div class="incidents-section">
+                    <div class="incidents-header">Recent Incidents</div>
+                    <div id="incidentsList"></div>
+                </div>
+            </div>
+
+            <!-- Add / Edit Monitor View -->
+            <div class="view" id="viewForm">
+                <div class="form-view-title" id="formViewTitle">Add New Monitor</div>
+                <div class="form-layout">
+                    <div class="form-card">
+                        <h3>General</h3>
+                        <div class="form-group">
+                            <label>Monitor Type</label>
+                            <select id="fType" onchange="onTypeChange()">
+                                <option value="http">HTTP(s)</option>
+                                <option value="ping">Ping (ICMP)</option>
+                                <option value="tcp">TCP Port</option>
+                                <option value="dns">DNS</option>
+                                <option value="push">Push / Heartbeat</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Friendly Name</label>
+                            <input id="fName" type="text" placeholder="My Website">
+                        </div>
+                        <!-- HTTP fields -->
+                        <div id="httpFields">
+                            <div class="form-group">
+                                <label>URL</label>
+                                <input id="fURL" type="url" placeholder="https://example.com">
+                            </div>
+                        </div>
+                        <!-- Host fields (ping/tcp/dns) -->
+                        <div id="hostFields" style="display:none">
+                            <div class="form-group">
+                                <label>Hostname</label>
+                                <input id="fHostname" type="text" placeholder="example.com">
+                            </div>
+                        </div>
+                        <!-- TCP port -->
+                        <div id="tcpFields" style="display:none">
+                            <div class="form-group">
+                                <label>Port</label>
+                                <input id="fPort" type="number" placeholder="443" min="1" max="65535">
+                            </div>
+                        </div>
+                        <!-- DNS type -->
+                        <div id="dnsFields" style="display:none">
+                            <div class="form-group">
+                                <label>Record Type</label>
+                                <select id="fDNSType">
+                                    <option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option><option>NS</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Heartbeat Interval (sec)</label>
+                                <input id="fInterval" type="number" value="60" min="10">
+                            </div>
+                            <div class="form-group">
+                                <label>Retries</label>
+                                <input id="fRetries" type="number" value="3" min="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Timeout (sec)</label>
+                            <input id="fTimeout" type="number" value="10" min="1">
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-green" id="btnSave" onclick="saveMonitor()">Save</button>
+                            <button class="btn btn-outline" onclick="cancelForm()">Cancel</button>
+                        </div>
+                    </div>
+                    <div class="form-card">
+                        <h3>HTTP Options</h3>
+                        <div id="httpFieldsRight">
+                            <div class="form-group">
+                                <label>Method</label>
+                                <select id="fMethod">
+                                    <option>GET</option><option>POST</option><option>PUT</option><option>HEAD</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Expected Status Code</label>
+                                <input id="fStatus" type="number" value="200">
+                            </div>
+                            <div class="form-group">
+                                <label>Keyword Check</label>
+                                <input id="fKeyword" type="text" placeholder="Text to find in response body">
+                                <div class="hint">Optional. Search response body for this string.</div>
+                            </div>
+                        </div>
+                        <h3 style="margin-top:24px">Notifications</h3>
+                        <div class="form-group">
+                            <label>Alert Channels</label>
+                            <input id="fAlertChannels" type="text" placeholder="email, telegram, discord, webhook">
+                            <div class="hint">Comma-separated. Leave blank for all enabled channels.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Toast Container ── -->
+    <div class="toast-container" id="toasts"></div>
+
+    <script>
+    const API = '/api/v1';
+    let monitors = [];
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let selectedId = null;
+    let editingId = null;
+    let sse = null;
+
+    // ── API Helpers ──
+    async function api(path, opts = {}) {
+        const res = await fetch(API + path, {
+            headers: { 'Content-Type': 'application/json' },
+            ...opts,
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || res.statusText);
+        }
+        return res.status === 204 ? null : res.json();
+    }
+
+    // ── Toast ──
+    function toast(msg, type = 'info') {
+        const el = document.createElement('div');
+        el.className = 'toast ' + type;
+        el.textContent = msg;
+        document.getElementById('toasts').appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+    }
+
+    // ── View Switching ──
+    function showView(name) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        const el = document.getElementById('view' + name.charAt(0).toUpperCase() + name.slice(1));
+        if (el) el.classList.add('active');
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        if (name === 'dashboard') {
+            document.getElementById('navDashboard').classList.add('active');
+            selectedId = null;
+            renderSidebar();
+        }
+    }
+
+    // ── Summary ──
+    async function loadSummary() {
+        try {
+            const s = await api('/monitors/summary');
+            document.getElementById('sumTotal').textContent = s.total;
+            document.getElementById('sumUp').textContent = s.up;
+            document.getElementById('sumDown').textContent = s.down;
+            document.getElementById('sumPaused').textContent = s.paused;
+            document.getElementById('sumPending').textContent = s.pending;
+        } catch (e) { console.error('Summary error:', e); }
+    }
+
+    // ── Sidebar Monitor List ──
+    async function loadMonitors() {
+        try {
+            monitors = await api('/monitors');
+            renderSidebar();
+            loadSummary();
+        } catch (e) {
+            console.error('Load error:', e);
+            toast('Failed to load monitors', 'error');
+        }
+    }
+
+    function renderSidebar() {
+        const list = document.getElementById('sidebarList');
+        let filtered = monitors;
+
+        if (currentFilter !== 'all') {
+            filtered = filtered.filter(m => m.status === currentFilter);
+        }
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            filtered = filtered.filter(m =>
+                m.name.toLowerCase().includes(q) ||
+                (m.url || '').toLowerCase().includes(q) ||
+                (m.hostname || '').toLowerCase().includes(q)
+            );
+        }
+
+        if (filtered.length === 0) {
+            list.innerHTML = monitors.length === 0
+                ? '<div class="empty-state"><h3>No monitors yet</h3><p>Click "Add New Monitor" to get started.</p></div>'
+                : '<div class="empty-state" style="padding:30px 16px"><p>No monitors match your filter.</p></div>';
+            return;
+        }
+
+        list.innerHTML = filtered.map(m => {
+            const stats = m.uptime_stats || {};
+            const uptime = stats.uptime_24h != null ? stats.uptime_24h.toFixed(1) : '0.0';
+            const uptimeClass = parseFloat(uptime) < 50 ? 'down-pct' : '';
+            const sel = m.id === selectedId ? ' selected' : '';
+            // Generate heartbeat ticks (use recent heartbeats if available, else fake)
+            let ticks = '';
+            const hbs = m.recent_heartbeats || [];
+            const tickCount = 30;
+            for (let i = 0; i < tickCount; i++) {
+                const delay = (i * 0.02).toFixed(2);
+                if (i < hbs.length) {
+                    ticks += `<div class="hb-tick ${hbs[i].status === 'up' ? 'up' : 'down'}" style="animation-delay:${delay}s"></div>`;
+                } else if (m.status === 'up') {
+                    ticks += `<div class="hb-tick up" style="animation-delay:${delay}s"></div>`;
+                } else if (m.status === 'down') {
+                    ticks += `<div class="hb-tick down" style="animation-delay:${delay}s"></div>`;
+                } else {
+                    ticks += `<div class="hb-tick empty" style="animation-delay:${delay}s"></div>`;
+                }
+            }
+            return `
+            <div class="sidebar-item${sel}" onclick="selectMonitor(${m.id})">
+                <div class="si-dot ${m.status}"></div>
+                <div class="si-body">
+                    <div class="si-name">${esc(m.name)}</div>
+                    <div class="si-heartbeats">${ticks}</div>
+                </div>
+                <div class="si-uptime ${uptimeClass}">${uptime}%</div>
+            </div>`;
+        }).join('');
+    }
+
+    function esc(s) {
+        const d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    // ── Filtering ──
+    function setFilter(f, el) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-pill').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        renderSidebar();
+    }
+    function filterMonitors(q) {
+        searchQuery = q;
+        renderSidebar();
+    }
+
+    // ── Events List (persistent, from API) ──
+    async function loadEventLogs() {
+        try {
+            const logs = await api('/events/log?limit=50');
+            renderEvents(logs || []);
+        } catch (e) { console.error('Events load error:', e); }
+    }
+
+    async function clearEventLogs() {
+        if (!confirm('Clear all event logs?')) return;
+        try {
+            await api('/events/log', { method: 'DELETE' });
+            renderEvents([]);
+            toast('Event logs cleared', 'success');
+        } catch (e) { toast(e.message, 'error'); }
+    }
+
+    function timeAgo(dateStr) {
+        const now = Date.now();
+        const d = new Date(dateStr).getTime();
+        const sec = Math.floor((now - d) / 1000);
+        if (sec < 10) return 'just now';
+        if (sec < 60) return sec + 's ago';
+        const min = Math.floor(sec / 60);
+        if (min < 60) return min + 'm ago';
+        const hr = Math.floor(min / 60);
+        if (hr < 24) return hr + 'h ago';
+        const days = Math.floor(hr / 24);
+        return days + 'd ago';
+    }
+
+    function eventBadgeClass(eventType) {
+        switch (eventType) {
+            case 'down': return 'badge-down';
+            case 'recovery': case 'up': return 'badge-up';
+            case 'paused': return 'badge-paused';
+            case 'created': case 'resumed': return 'badge-created';
+            case 'deleted': return 'badge-deleted';
+            default: return 'badge-up';
+        }
+    }
+
+    function renderEvents(logs) {
+        const body = document.getElementById('eventsBody');
+        const count = document.getElementById('evCount');
+        count.textContent = logs.length;
+        if (logs.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" class="events-empty">No recent events</td></tr>';
+            return;
+        }
+        body.innerHTML = logs.slice(0, 30).map(ev => {
+            const statusBadge = ev.status === 'up' ? 'badge-up' : ev.status === 'down' ? 'badge-down' : 'badge-paused';
+            const statusLabel = ev.status ? ev.status.charAt(0).toUpperCase() + ev.status.slice(1) : '-';
+            const evLabel = ev.event_type ? ev.event_type.charAt(0).toUpperCase() + ev.event_type.slice(1) : '-';
+            return `<tr>
+                <td><strong>${esc(ev.monitor_name)}</strong></td>
+                <td><span class="badge ${eventBadgeClass(ev.event_type)}">${evLabel}</span></td>
+                <td><span class="badge ${statusBadge}">${statusLabel}</span></td>
+                <td title="${new Date(ev.created_at).toLocaleString()}">${timeAgo(ev.created_at)}</td>
+                <td style="color:var(--text2)">${esc(ev.message)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── Monitor Detail ──
+    async function selectMonitor(id) {
+        selectedId = id;
+        renderSidebar();
+        showView('detail');
+
+        try {
+            const m = await api(`/monitors/${id}`);
+            const stats = m.uptime_stats || {};
+            document.getElementById('detailName').textContent = m.name;
+            document.getElementById('detailId').textContent = '#' + m.id;
+
+            const target = m.url || m.hostname || '';
+            if (target && (target.startsWith('http://') || target.startsWith('https://'))) {
+                document.getElementById('detailUrl').innerHTML =
+                    `${m.type.toUpperCase()} &middot; <a href="${esc(target)}" target="_blank" rel="noopener">${esc(target)}</a> &middot; every ${m.interval}s`;
+            } else {
+                document.getElementById('detailUrl').textContent = `${m.type.toUpperCase()} · ${target} · every ${m.interval}s`;
+            }
+
+            const btn = document.getElementById('btnPauseResume');
+            if (m.active) {
+                btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="4" height="10" rx="1"/><rect x="7" y="1" width="4" height="10" rx="1"/></svg> Pause';
+            } else {
+                btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 10,6 2,11"/></svg> Resume';
+            }
+
+            // Status pill
+            const pill = document.getElementById('statusPill');
+            pill.className = 'status-pill ' + m.status;
+            pill.textContent = m.status.toUpperCase();
+
+            // Heartbeat bar
+            loadHeartbeatBar(id);
+
+            // Stats
+            document.getElementById('detailStats').innerHTML = `
+                <div class="stat-card"><div class="sc-val">${m.response_time||0}ms</div><div class="sc-label">Response (Current)</div></div>
+                <div class="stat-card"><div class="sc-val">${Math.round(stats.avg_latency||0)}ms</div><div class="sc-label">Avg. Response (24h)</div></div>
+                <div class="stat-card"><div class="sc-val green">${(stats.uptime_24h||0).toFixed(2)}%</div><div class="sc-label">Uptime (24h)</div></div>
+                <div class="stat-card"><div class="sc-val green">${(stats.uptime_7d||0).toFixed(2)}%</div><div class="sc-label">Uptime (7d)</div></div>
+                <div class="stat-card"><div class="sc-val green">${(stats.uptime_30d||0).toFixed(2)}%</div><div class="sc-label">Uptime (30d)</div></div>
+                <div class="stat-card"><div class="sc-val">${m.type === 'http' && m.cert_expiry ? m.cert_expiry : 'N/A'}</div><div class="sc-label">Cert Expiry</div></div>
+            `;
+
+            loadChart(id);
+            loadIncidents(id);
+        } catch (e) {
+            toast('Failed to load monitor details', 'error');
+        }
+    }
+
+    async function loadHeartbeatBar(id) {
+        const bar = document.getElementById('heartbeatBar');
+        const info = document.getElementById('heartbeatInfo');
+        try {
+            const history = await api(`/monitors/${id}/history?hours=24&limit=90`);
+            if (!history || history.length === 0) {
+                bar.innerHTML = Array(90).fill('<div class="hb empty"></div>').join('');
+                info.textContent = 'No heartbeat data yet';
+                return;
+            }
+            bar.innerHTML = history.map((h, i) =>
+                `<div class="hb ${h.status === 'up' ? 'up' : 'down'}" title="${new Date(h.created_at).toLocaleString()} — ${h.response_time}ms" style="animation-delay:${(i*0.01).toFixed(2)}s"></div>`
+            ).join('');
+            // Pad remaining
+            const remaining = 90 - history.length;
+            if (remaining > 0) {
+                bar.innerHTML = Array(remaining).fill('<div class="hb empty"></div>').join('') + bar.innerHTML;
+            }
+            info.textContent = `Last check: ${new Date(history[history.length-1].created_at).toLocaleString()}`;
+        } catch (e) {
+            bar.innerHTML = Array(90).fill('<div class="hb empty"></div>').join('');
+            info.textContent = '';
+        }
+    }
+
+    // ── Chart ──
+    async function loadChart(id) {
+        const canvas = document.getElementById('chartCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
+        canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
+        ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+        const W = canvas.offsetWidth, H = canvas.offsetHeight;
+
+        try {
+            const history = await api(`/monitors/${id}/history?hours=24&limit=200`);
+            ctx.clearRect(0, 0, W, H);
+
+            if (!history || history.length === 0) {
+                ctx.fillStyle = '#aaa';
+                ctx.font = '13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('No data yet', W / 2, H / 2);
+                return;
+            }
+
+            const times = history.map(h => h.response_time);
+            const max = Math.max(...times, 1);
+            const pad = { t: 10, b: 30, l: 50, r: 10 };
+            const cw = W - pad.l - pad.r;
+            const ch = H - pad.t - pad.b;
+
+            // Grid
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = pad.t + (ch / 4) * i;
+                ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+                ctx.fillStyle = '#aaa'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+                ctx.fillText(Math.round(max - (max / 4) * i) + 'ms', pad.l - 6, y + 4);
+            }
+
+            // Line
+            ctx.beginPath();
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 2;
+            history.forEach((h, i) => {
+                const x = pad.l + (i / (history.length - 1 || 1)) * cw;
+                const y = pad.t + ch - (h.response_time / max) * ch;
+                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Fill
+            const last = history.length - 1;
+            ctx.lineTo(pad.l + (last / (history.length - 1 || 1)) * cw, pad.t + ch);
+            ctx.lineTo(pad.l, pad.t + ch);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(34,197,94,.1)';
+            ctx.fill();
+
+            // Time labels
+            ctx.fillStyle = '#aaa'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+            [0, Math.floor(history.length / 2), history.length - 1].forEach(i => {
+                if (!history[i]) return;
+                const x = pad.l + (i / (history.length - 1 || 1)) * cw;
+                const t = new Date(history[i].created_at);
+                ctx.fillText(t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), x, H - 6);
+            });
+        } catch (e) {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#aaa'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('Failed to load chart', W / 2, H / 2);
+        }
+    }
+
+    // ── Incidents ──
+    async function loadIncidents(id) {
+        const el = document.getElementById('incidentsList');
+        try {
+            const m = await api(`/monitors/${id}`);
+            const incidents = m.incidents || [];
+            if (incidents.length === 0) {
+                el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:16px 20px">No incidents recorded.</div>';
+                return;
+            }
+            el.innerHTML = incidents.slice(0, 10).map(inc => {
+                const start = new Date(inc.started_at).toLocaleString();
+                const resolved = inc.resolved
+                    ? `<span class="incident-resolved">Resolved (${formatDur(inc.duration)})</span>`
+                    : '<span class="incident-open">Ongoing</span>';
+                return `<div class="incident-row"><div><span class="incident-cause">${esc(inc.root_cause || 'Unknown')}</span><br><span style="font-size:11px;color:var(--text2)">${start}</span></div><div>${resolved}</div></div>`;
+            }).join('');
+        } catch (e) {
+            el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:16px 20px">Failed to load incidents.</div>';
+        }
+    }
+
+    function formatDur(sec) {
+        if (!sec) return '-';
+        if (sec < 60) return sec + 's';
+        if (sec < 3600) return Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
+        return Math.floor(sec / 3600) + 'h ' + Math.floor((sec % 3600) / 60) + 'm';
+    }
+
+    // ── Pause/Resume ──
+    async function togglePause() {
+        if (!selectedId) return;
+        const m = monitors.find(x => x.id === selectedId);
+        const action = m && m.active ? 'pause' : 'resume';
+        try {
+            await api(`/monitors/${selectedId}/${action}`, { method: 'POST' });
+            toast(`Monitor ${action}d`, 'success');
+            loadMonitors();
+            selectMonitor(selectedId);
+        } catch (e) { toast(e.message, 'error'); }
+    }
+
+    // ── Delete ──
+    async function deleteMonitor() {
+        if (!selectedId || !confirm('Delete this monitor? This cannot be undone.')) return;
+        try {
+            await api(`/monitors/${selectedId}`, { method: 'DELETE' });
+            toast('Monitor deleted', 'success');
+            selectedId = null;
+            showView('dashboard');
+            loadMonitors();
+        } catch (e) { toast(e.message, 'error'); }
+    }
+
+    // ── Form (Add / Edit) ──
+    function openCreateView() {
+        editingId = null;
+        document.getElementById('formViewTitle').textContent = 'Add New Monitor';
+        document.getElementById('btnSave').textContent = 'Save';
+        resetForm();
+        showView('form');
+    }
+
+    function openEditView() {
+        if (!selectedId) return;
+        const m = monitors.find(x => x.id === selectedId);
+        if (!m) return;
+        editingId = m.id;
+        document.getElementById('formViewTitle').textContent = 'Edit Monitor';
+        document.getElementById('btnSave').textContent = 'Save';
+        fillForm(m);
+        showView('form');
+    }
+
+    function cancelForm() {
+        document.getElementById('fType').disabled = false;
+        if (selectedId) {
+            showView('detail');
+        } else {
+            showView('dashboard');
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('fName').value = '';
+        document.getElementById('fType').value = 'http';
+        document.getElementById('fType').disabled = false;
+        document.getElementById('fInterval').value = 60;
+        document.getElementById('fURL').value = '';
+        document.getElementById('fMethod').value = 'GET';
+        document.getElementById('fStatus').value = 200;
+        document.getElementById('fKeyword').value = '';
+        document.getElementById('fHostname').value = '';
+        document.getElementById('fPort').value = '';
+        document.getElementById('fDNSType').value = 'A';
+        document.getElementById('fTimeout').value = 10;
+        document.getElementById('fRetries').value = 3;
+        document.getElementById('fAlertChannels').value = '';
+        onTypeChange();
+    }
+
+    function fillForm(m) {
+        document.getElementById('fName').value = m.name || '';
+        document.getElementById('fType').value = m.type;
+        document.getElementById('fType').disabled = true;
+        document.getElementById('fInterval').value = m.interval;
+        document.getElementById('fURL').value = m.url || '';
+        document.getElementById('fMethod').value = m.method || 'GET';
+        document.getElementById('fStatus').value = m.expected_status_code || 200;
+        document.getElementById('fKeyword').value = m.keyword_check || '';
+        document.getElementById('fHostname').value = m.hostname || '';
+        document.getElementById('fPort').value = m.port || '';
+        document.getElementById('fDNSType').value = m.dns_type || 'A';
+        document.getElementById('fTimeout').value = m.timeout || 10;
+        document.getElementById('fRetries').value = m.retries || 3;
+        document.getElementById('fAlertChannels').value = m.alert_channels || '';
+        onTypeChange();
+    }
+
+    function onTypeChange() {
+        const t = document.getElementById('fType').value;
+        document.getElementById('httpFields').style.display = t === 'http' ? '' : 'none';
+        document.getElementById('httpFieldsRight').style.display = t === 'http' ? '' : 'none';
+        document.getElementById('hostFields').style.display = ['ping', 'tcp', 'dns'].includes(t) ? '' : 'none';
+        document.getElementById('tcpFields').style.display = t === 'tcp' ? '' : 'none';
+        document.getElementById('dnsFields').style.display = t === 'dns' ? '' : 'none';
+    }
+
+    async function saveMonitor() {
+        const t = document.getElementById('fType').value;
+        const body = {
+            name: document.getElementById('fName').value.trim(),
+            type: t,
+            interval: parseInt(document.getElementById('fInterval').value) || 60,
+            timeout: parseInt(document.getElementById('fTimeout').value) || 10,
+            retries: parseInt(document.getElementById('fRetries').value) || 3,
+            alert_channels: document.getElementById('fAlertChannels').value.trim(),
+        };
+
+        if (t === 'http') {
+            body.url = document.getElementById('fURL').value.trim();
+            body.method = document.getElementById('fMethod').value;
+            body.expected_status_code = parseInt(document.getElementById('fStatus').value) || 200;
+            body.keyword_check = document.getElementById('fKeyword').value.trim();
+        } else if (['ping', 'tcp', 'dns'].includes(t)) {
+            body.hostname = document.getElementById('fHostname').value.trim();
+        }
+        if (t === 'tcp') body.port = parseInt(document.getElementById('fPort').value) || 0;
+        if (t === 'dns') body.dns_type = document.getElementById('fDNSType').value;
+
+        if (!body.name) { toast('Name is required', 'error'); return; }
+
+        try {
+            if (editingId) {
+                await api(`/monitors/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+                toast('Monitor updated', 'success');
+                document.getElementById('fType').disabled = false;
+                loadMonitors();
+                selectMonitor(editingId);
+            } else {
+                const created = await api('/monitors', { method: 'POST', body: JSON.stringify(body) });
+                toast('Monitor created', 'success');
+                document.getElementById('fType').disabled = false;
+                loadMonitors();
+                if (created && created.id) {
+                    selectMonitor(created.id);
+                } else {
+                    showView('dashboard');
+                }
+            }
+        } catch (e) {
+            toast(e.message, 'error');
+        }
+    }
+
+    // ── SSE ──
+    function connectSSE() {
+        sse = new EventSource(API + '/events');
+        const dot = document.getElementById('connDot');
+        const label = document.getElementById('connLabel');
+
+        sse.addEventListener('connected', () => {
+            dot.classList.remove('disconnected');
+            label.textContent = 'Live';
+        });
+
+        const refreshEvents = ['down', 'recovery', 'monitor_created', 'monitor_updated', 'monitor_deleted', 'monitor_paused', 'monitor_resumed', 'monitor_push'];
+        refreshEvents.forEach(evt => {
+            sse.addEventListener(evt, (e) => {
+                loadMonitors();
+                loadEventLogs();
+                if (selectedId) selectMonitor(selectedId);
+                const name = safeParse(e.data);
+                if (evt === 'down') toast('[' + name + '] is DOWN', 'error');
+                if (evt === 'recovery') toast('[' + name + '] is back UP', 'success');
+            });
+        });
+
+        sse.onerror = () => {
+            dot.classList.add('disconnected');
+            label.textContent = 'Reconnecting...';
+        };
+    }
+
+    function safeParse(data) {
+        try { const d = JSON.parse(data); return d.Monitor ? d.Monitor.name || d.Monitor.Name : (d.name || d.Name || ''); } catch { return ''; }
+    }
+
+    // ── Clone Monitor ──
+    async function cloneMonitor() {
+        if (!selectedId) return;
+        try {
+            const cloned = await api(`/monitors/${selectedId}/clone`, { method: 'POST' });
+            toast('Monitor cloned: ' + cloned.name, 'success');
+            loadMonitors();
+            if (cloned && cloned.id) selectMonitor(cloned.id);
+        } catch (e) { toast(e.message, 'error'); }
+    }
+
+    // ── Auth Awareness ──
+    async function checkAuth() {
+        try {
+            const info = await api('/auth/me');
+            if (info.auth_enabled && info.username) {
+                document.getElementById('logoutBtn').style.display = '';
+                document.getElementById('avatarBadge').textContent = info.username.charAt(0).toUpperCase();
+                document.getElementById('avatarBadge').title = info.username;
+            }
+        } catch (e) { /* auth not enabled or not logged in */ }
+    }
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMonitors();
+        loadEventLogs();
+        connectSSE();
+        checkAuth();
+        setInterval(loadMonitors, 30000);
+        setInterval(loadEventLogs, 30000);
+    });
+    </script>
+</body>
+</html>

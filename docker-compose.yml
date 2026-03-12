@@ -1,0 +1,56 @@
+# VyanaWatch — docker-compose.yml
+# Quick start:  docker compose up -d
+# With Postgres: docker compose --profile postgres up -d
+
+services:
+  vyanawatch:
+    build: .
+    image: vyanawatch:latest
+    container_name: vyanawatch
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    cap_add:
+      - NET_RAW      # Required for ICMP ping monitors
+    volumes:
+      - vyanawatch-data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      TZ: UTC
+      # ── Secrets (override config.yaml values) ──
+      # VYANAWATCH_SMTP_PASSWORD: ""
+      # VYANAWATCH_TELEGRAM_TOKEN: ""
+      # VYANAWATCH_DISCORD_WEBHOOK_URL: ""
+      # VYANAWATCH_AUTH_PASSWORD: ""
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_started
+        required: false
+
+  # ── PostgreSQL (activate with: docker compose --profile postgres up -d) ──
+  db:
+    image: postgres:16-alpine
+    container_name: vyanawatch-db
+    restart: unless-stopped
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: vyanawatch
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: vyanawatch
+    volumes:
+      - vyanawatch-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vyanawatch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  vyanawatch-data:
+  vyanawatch-pgdata:

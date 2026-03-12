@@ -1,0 +1,30 @@
+# VyanaWatch .dockerignore
+.git
+.gitignore
+.vscode
+.idea
+*.md
+!README.md
+
+# Build artifacts
+vyanawatch
+vyanawatch.exe
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+
+# Test / temp
+stdout.txt
+stderr.txt
+*.test
+*.out
+
+# Docker
+docker-compose.yml
+docker-compose.override.yml
+Dockerfile
+
+# Config (don't bake secrets into image)
+config.yaml
