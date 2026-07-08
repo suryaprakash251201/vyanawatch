@@ -261,6 +261,21 @@
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
         .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
 
+        /* ── Hamburger / Sidebar Toggle ── */
+        .hamburger {
+            width: 36px; height: 36px; border: none; background: transparent;
+            cursor: pointer; display: none; align-items: center; justify-content: center;
+            color: var(--text2); border-radius: 8px; transition: all var(--transition);
+            flex-shrink: 0;
+        }
+        .hamburger:hover { background: var(--bg); color: var(--text); }
+        .hamburger svg { width: 20px; height: 20px; }
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3);
+            z-index: 49; opacity: 0; transition: opacity .25s ease;
+        }
+        .sidebar-overlay.show { opacity: 1; }
+
         /* ── Responsive ── */
         @media (max-width: 900px) {
             .sidebar { width: 260px; }
@@ -269,13 +284,27 @@
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 640px) {
-            .sidebar { display: none; }
+            .hamburger { display: flex; }
+            .sidebar {
+                display: flex; transform: translateX(-100%);
+                transition: transform .25s cubic-bezier(.4,0,.2,1);
+                z-index: 60;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-overlay.show { display: block; }
             .main { margin-left: 0; padding: 14px; }
             .quick-stats { flex-direction: column; }
             .form-layout { grid-template-columns: 1fr; }
             .form-row { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .header-left .nav-links { display: none; }
+        }
+        @media (min-width: 641px) {
+            .sidebar.sidebar-collapsed {
+                width: 0; overflow: hidden; border-right: none;
+                transition: width .25s cubic-bezier(.4,0,.2,1);
+            }
+            .sidebar.sidebar-collapsed + .main { margin-left: 0; }
         }
 
         /* Scrollbar */
@@ -394,19 +423,49 @@
         .settings-actions { margin-top: 24px; display: flex; gap: 10px; }
         html.dark .settings-section { background: var(--surface); border-color: var(--border); }
         html.dark .settings-section-header { border-color: var(--border); }
+
+        /* ── Status Pages View ── */
+        .sp-card {
+            background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow-sm);
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            transition: all var(--transition);
+        }
+        .sp-card:hover { box-shadow: var(--shadow); }
+        .sp-card .sp-main { min-width: 0; flex: 1; }
+        .sp-card .sp-name { font-size: 15px; font-weight: 700; color: var(--text); }
+        .sp-card .sp-meta { font-size: 12px; color: var(--text2); margin-top: 4px; }
+        .sp-card .sp-meta a { color: var(--blue); text-decoration: none; }
+        .sp-card .sp-meta a:hover { text-decoration: underline; }
+        .sp-card .sp-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        .sp-monitor-list {
+            max-height: 240px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;
+            padding: 6px; background: var(--bg);
+        }
+        .sp-monitor-list label {
+            display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px;
+            font-size: 13px; font-weight: 500; cursor: pointer; margin: 0;
+        }
+        .sp-monitor-list label:hover { background: var(--white); }
+        .sp-monitor-list input { width: auto; }
+        html.dark .sp-monitor-list { background: var(--bg); border-color: var(--border); }
+        html.dark .sp-monitor-list label:hover { background: var(--surface); }
     </style>
 </head>
 <body>
     <!-- ── Header ── -->
     <div class="header">
         <div class="header-left">
+            <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
             <a class="logo" href="/">
                 <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#22c55e" stroke-width="3"/><polyline points="8,18 14,12 18,20 24,10" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <span>Vyana<span class="accent">Watch</span></span>
             </a>
             <div class="nav-links">
                 <button class="nav-link active" id="navDashboard" onclick="showView('dashboard')">Dashboard</button>
-                <a class="nav-link" href="/status/default">Status Pages</a>
+                <button class="nav-link" id="navStatusPages" onclick="openStatusPagesView()">Status Pages</button>
             </div>
         </div>
         <div class="header-right">
@@ -454,8 +513,10 @@
 
     <!-- ── App Layout ── -->
     <div class="app-layout">
+        <!-- ── Sidebar Overlay (mobile) ── -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
         <!-- ── Sidebar ── -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <input type="text" class="sidebar-search" placeholder="Search..." oninput="filterMonitors(this.value)" id="searchBox">
                 <div class="sidebar-filters">
@@ -626,14 +687,42 @@
                                     <option>GET</option><option>POST</option><option>PUT</option><option>HEAD</option>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label>Expected Status Code</label>
-                                <input id="fStatus" type="number" value="200">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Expected Status Code</label>
+                                    <input id="fStatus" type="number" value="200">
+                                </div>
+                                <div class="form-group">
+                                    <label>Keyword Match</label>
+                                    <select id="fKeywordPresent">
+                                        <option value="true">Must contain</option>
+                                        <option value="false">Must NOT contain</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Keyword Check</label>
                                 <input id="fKeyword" type="text" placeholder="Text to find in response body">
                                 <div class="hint">Optional. Search response body for this string.</div>
+                            </div>
+                            <div class="form-group" style="margin-top:4px">
+                                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
+                                    <input type="checkbox" id="fSSLCheck" style="width:auto"> Check SSL certificate expiry
+                                </label>
+                                <div class="hint">Alert (and flag a warning) when the TLS certificate is close to expiring.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>SSL Expiry Warning (days)</label>
+                                <input id="fSSLExpiryDays" type="number" value="30" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Custom Headers (JSON)</label>
+                                <textarea id="fHeaders" rows="3" placeholder='{"Authorization":"Bearer token"}'></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Request Body (JSON)</label>
+                                <textarea id="fBody" rows="3" placeholder='{"key":"value"}'></textarea>
+                                <div class="hint">Sent for POST/PUT requests.</div>
                             </div>
                         </div>
                         <h3 style="margin-top:24px">Notifications</h3>
@@ -763,6 +852,9 @@
                                 <input id="sTelegramChatID" type="text" placeholder="-1001234567890">
                             </div>
                         </div>
+                        <div style="margin-top:12px;display:flex;gap:8px">
+                            <button class="btn btn-outline btn-sm" onclick="sendTestTelegram()">Send Test</button>
+                        </div>
                     </div>
 
                     <!-- Discord Configuration -->
@@ -782,6 +874,9 @@
                         <div class="form-group">
                             <label>Webhook URL</label>
                             <input id="sDiscordWebhook" type="url" placeholder="https://discord.com/api/webhooks/...">
+                        </div>
+                        <div style="margin-top:12px;display:flex;gap:8px">
+                            <button class="btn btn-outline btn-sm" onclick="sendTestDiscord()">Send Test</button>
                         </div>
                     </div>
 
@@ -816,6 +911,9 @@
                                 <input id="sWebhookHeaders" type="text" placeholder='{"Authorization":"Bearer token"}'>
                             </div>
                         </div>
+                        <div style="margin-top:12px;display:flex;gap:8px">
+                            <button class="btn btn-outline btn-sm" onclick="sendTestWebhook()">Send Test</button>
+                        </div>
                     </div>
 
                     <div class="settings-actions">
@@ -823,6 +921,49 @@
                         <button class="btn btn-outline" onclick="sendTestEmail()">Send Test Email</button>
                         <button class="btn btn-green" onclick="saveSettings()">Save Settings</button>
                         <button class="btn btn-outline" onclick="showView('dashboard')">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Pages Management View -->
+            <div class="view" id="viewStatusPages">
+                <div class="form-view-title" style="display:flex;align-items:center;justify-content:space-between">
+                    <span>Status Pages</span>
+                    <button class="btn btn-green btn-sm" onclick="openStatusPageCreate()">+ New Status Page</button>
+                </div>
+                <div id="statusPagesList"></div>
+                <div id="statusPageForm" style="display:none" class="settings-layout">
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <h3 id="spFormTitle">New Status Page</h3>
+                        </div>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input id="spName" type="text" placeholder="My Company Status">
+                        </div>
+                        <div class="form-group">
+                            <label>Slug (URL)</label>
+                            <input id="spSlug" type="text" placeholder="my-company">
+                            <div class="hint">Used in the public URL: /status/&lt;slug&gt;</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input id="spDescription" type="text" placeholder="Current operational status of our services">
+                        </div>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600">
+                                <input type="checkbox" id="spPublished" style="width:auto"> Published (publicly accessible)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Monitors</label>
+                            <div id="spMonitorList" class="sp-monitor-list"></div>
+                            <div class="hint">Select which monitors appear on this page.</div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="btn btn-green" onclick="saveStatusPage()">Save</button>
+                        <button class="btn btn-outline" onclick="cancelStatusPageForm()">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -840,6 +981,21 @@
     let selectedId = null;
     let editingId = null;
     let sse = null;
+    let currentChartHistory = null;
+    let sidebarOpen = false;
+
+    function toggleSidebar() {
+        const winW = window.innerWidth;
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebarOpen = !sidebarOpen;
+        if (winW <= 640) {
+            sidebar.classList.toggle('open', sidebarOpen);
+            overlay.classList.toggle('show', sidebarOpen);
+        } else {
+            sidebar.classList.toggle('sidebar-collapsed', !sidebarOpen);
+        }
+    }
 
     // ── API Helpers ──
     async function api(path, opts = {}) {
@@ -873,6 +1029,10 @@
             document.getElementById('navDashboard').classList.add('active');
             selectedId = null;
             renderSidebar();
+        }
+        if (name === 'statusPages') {
+            const navSP = document.getElementById('navStatusPages');
+            if (navSP) navSP.classList.add('active');
         }
         if (name === 'settings') loadSettings();
         if (name === 'profile') {
@@ -1078,6 +1238,9 @@
             // Heartbeat bar
             loadHeartbeatBar(id);
 
+            // Cert expiry card
+            const cert = formatCert(m);
+
             // Stats
             document.getElementById('detailStats').innerHTML = `
                 <div class="stat-card"><div class="sc-val">${m.response_time||0}ms</div><div class="sc-label">Response (Current)</div></div>
@@ -1085,7 +1248,7 @@
                 <div class="stat-card"><div class="sc-val green">${(stats.uptime_24h||0).toFixed(2)}%</div><div class="sc-label">Uptime (24h)</div></div>
                 <div class="stat-card"><div class="sc-val green">${(stats.uptime_7d||0).toFixed(2)}%</div><div class="sc-label">Uptime (7d)</div></div>
                 <div class="stat-card"><div class="sc-val green">${(stats.uptime_30d||0).toFixed(2)}%</div><div class="sc-label">Uptime (30d)</div></div>
-                <div class="stat-card"><div class="sc-val">${m.type === 'http' && m.cert_expiry ? m.cert_expiry : 'N/A'}</div><div class="sc-label">Cert Expiry</div></div>
+                <div class="stat-card"><div class="sc-val" style="color:${cert.warn ? 'var(--orange)' : 'var(--green)'}">${cert.text}</div><div class="sc-label">Cert Expiry</div></div>
             `;
 
             loadChart(id);
@@ -1122,73 +1285,97 @@
 
     // ── Chart ──
     async function loadChart(id) {
-        const canvas = document.getElementById('chartCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
-        canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
-        ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-        const W = canvas.offsetWidth, H = canvas.offsetHeight;
-
         try {
-            const history = await api(`/monitors/${id}/history?hours=24&limit=200`);
-            ctx.clearRect(0, 0, W, H);
-
-            if (!history || history.length === 0) {
-                ctx.fillStyle = '#aaa';
-                ctx.font = '13px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('No data yet', W / 2, H / 2);
-                return;
-            }
-
-            const times = history.map(h => h.response_time);
-            const max = Math.max(...times, 1);
-            const pad = { t: 10, b: 30, l: 50, r: 10 };
-            const cw = W - pad.l - pad.r;
-            const ch = H - pad.t - pad.b;
-
-            // Grid
-            ctx.strokeStyle = '#eee';
-            ctx.lineWidth = 1;
-            for (let i = 0; i <= 4; i++) {
-                const y = pad.t + (ch / 4) * i;
-                ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
-                ctx.fillStyle = '#aaa'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
-                ctx.fillText(Math.round(max - (max / 4) * i) + 'ms', pad.l - 6, y + 4);
-            }
-
-            // Line
-            ctx.beginPath();
-            ctx.strokeStyle = '#22c55e';
-            ctx.lineWidth = 2;
-            history.forEach((h, i) => {
-                const x = pad.l + (i / (history.length - 1 || 1)) * cw;
-                const y = pad.t + ch - (h.response_time / max) * ch;
-                i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-
-            // Fill
-            const last = history.length - 1;
-            ctx.lineTo(pad.l + (last / (history.length - 1 || 1)) * cw, pad.t + ch);
-            ctx.lineTo(pad.l, pad.t + ch);
-            ctx.closePath();
-            ctx.fillStyle = 'rgba(34,197,94,.1)';
-            ctx.fill();
-
-            // Time labels
-            ctx.fillStyle = '#aaa'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
-            [0, Math.floor(history.length / 2), history.length - 1].forEach(i => {
-                if (!history[i]) return;
-                const x = pad.l + (i / (history.length - 1 || 1)) * cw;
-                const t = new Date(history[i].created_at);
-                ctx.fillText(t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), x, H - 6);
-            });
+            currentChartHistory = await api(`/monitors/${id}/history?hours=24&limit=200`);
+            drawResponseChart(false);
         } catch (e) {
-            ctx.clearRect(0, 0, W, H);
-            ctx.fillStyle = '#aaa'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('Failed to load chart', W / 2, H / 2);
+            currentChartHistory = null;
+            drawResponseChart(true);
         }
+    }
+
+    // drawResponseChart renders the response-time line chart. Down periods are colored red.
+    function drawResponseChart(failed) {
+        const canvas = document.getElementById('chartCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const W = canvas.offsetWidth, H = canvas.offsetHeight;
+        ctx.clearRect(0, 0, W, H);
+
+        const history = currentChartHistory;
+        if (!history || history.length === 0 || failed) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(failed ? 'Failed to load chart' : 'No data yet', W / 2, H / 2);
+            return;
+        }
+
+        const times = history.map(h => h.response_time);
+        const max = Math.max(...times, 1);
+        const pad = { t: 10, b: 30, l: 50, r: 10 };
+        const cw = W - pad.l - pad.r;
+        const ch = H - pad.t - pad.b;
+
+        // Grid
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = pad.t + (ch / 4) * i;
+            ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+            ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+            ctx.fillText(Math.round(max - (max / 4) * i) + 'ms', pad.l - 6, y + 4);
+        }
+
+        const xAt = i => pad.l + (i / (history.length - 1 || 1)) * cw;
+        const yAt = h => pad.t + ch - (h.response_time / max) * ch;
+
+        // Line — color each segment red when either endpoint is down
+        ctx.lineWidth = 2;
+        for (let i = 1; i < history.length; i++) {
+            const down = history[i].status === 'down' || history[i - 1].status === 'down';
+            ctx.strokeStyle = down ? '#ef4444' : '#22c55e';
+            ctx.beginPath();
+            ctx.moveTo(xAt(i - 1), yAt(history[i - 1]));
+            ctx.lineTo(xAt(i), yAt(history[i]));
+            ctx.stroke();
+        }
+
+        // Down markers
+        history.forEach((h, i) => {
+            if (h.status === 'down') {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(xAt(i), yAt(h), 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        // Fill area under the line
+        ctx.beginPath();
+        history.forEach((h, i) => {
+            const x = xAt(i), y = yAt(h);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        const last = history.length - 1;
+        ctx.lineTo(xAt(last), pad.t + ch);
+        ctx.lineTo(xAt(0), pad.t + ch);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(34,197,94,.08)';
+        ctx.fill();
+
+        // Time labels
+        ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+        [0, Math.floor(history.length / 2), history.length - 1].forEach(i => {
+            if (!history[i]) return;
+            const x = xAt(i);
+            const t = new Date(history[i].created_at);
+            ctx.fillText(t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), x, H - 6);
+        });
     }
 
     // ── Incidents ──
@@ -1218,6 +1405,17 @@
         if (sec < 60) return sec + 's';
         if (sec < 3600) return Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
         return Math.floor(sec / 3600) + 'h ' + Math.floor((sec % 3600) / 60) + 'm';
+    }
+
+    // ── SSL cert expiry formatting ──
+    function formatCert(m) {
+        if (m.type !== 'http' || !m.cert_expiry) return { text: 'N/A', warn: false };
+        const exp = new Date(m.cert_expiry);
+        const days = Math.ceil((exp.getTime() - Date.now()) / 86400000);
+        const txt = exp.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) +
+            ' (' + (days >= 0 ? days + 'd left' : 'expired') + ')';
+        const threshold = m.ssl_expiry_days || 30;
+        return { text: txt, warn: days <= threshold };
     }
 
     // ── Pause/Resume ──
@@ -1283,6 +1481,11 @@
         document.getElementById('fMethod').value = 'GET';
         document.getElementById('fStatus').value = 200;
         document.getElementById('fKeyword').value = '';
+        document.getElementById('fSSLCheck').checked = false;
+        document.getElementById('fSSLExpiryDays').value = 30;
+        document.getElementById('fKeywordPresent').value = 'true';
+        document.getElementById('fHeaders').value = '';
+        document.getElementById('fBody').value = '';
         document.getElementById('fHostname').value = '';
         document.getElementById('fPort').value = '';
         document.getElementById('fDNSType').value = 'A';
@@ -1301,6 +1504,11 @@
         document.getElementById('fMethod').value = m.method || 'GET';
         document.getElementById('fStatus').value = m.expected_status_code || 200;
         document.getElementById('fKeyword').value = m.keyword_check || '';
+        document.getElementById('fSSLCheck').checked = !!m.ssl_check;
+        document.getElementById('fSSLExpiryDays').value = m.ssl_expiry_days || 30;
+        document.getElementById('fKeywordPresent').value = m.keyword_present ? 'true' : 'false';
+        document.getElementById('fHeaders').value = m.headers || '';
+        document.getElementById('fBody').value = m.body || '';
         document.getElementById('fHostname').value = m.hostname || '';
         document.getElementById('fPort').value = m.port || '';
         document.getElementById('fDNSType').value = m.dns_type || 'A';
@@ -1335,6 +1543,19 @@
             body.method = document.getElementById('fMethod').value;
             body.expected_status_code = parseInt(document.getElementById('fStatus').value) || 200;
             body.keyword_check = document.getElementById('fKeyword').value.trim();
+            body.keyword_present = document.getElementById('fKeywordPresent').value === 'true';
+            body.ssl_check = document.getElementById('fSSLCheck').checked;
+            body.ssl_expiry_days = parseInt(document.getElementById('fSSLExpiryDays').value) || 30;
+            const headersRaw = document.getElementById('fHeaders').value.trim();
+            const bodyRaw = document.getElementById('fBody').value.trim();
+            if (headersRaw) {
+                try { JSON.parse(headersRaw); } catch (e) { toast('Custom Headers must be valid JSON', 'error'); return; }
+                body.headers = headersRaw;
+            }
+            if (bodyRaw) {
+                try { JSON.parse(bodyRaw); } catch (e) { toast('Request Body must be valid JSON', 'error'); return; }
+                body.body = bodyRaw;
+            }
         } else if (['ping', 'tcp', 'dns'].includes(t)) {
             body.hostname = document.getElementById('fHostname').value.trim();
         }
@@ -1560,6 +1781,33 @@
         }
     }
 
+    async function sendTestTelegram() {
+        try {
+            await api('/settings/test-telegram', { method: 'POST' });
+            toast('Test Telegram message sent successfully', 'success');
+        } catch (e) {
+            toast('Failed to send test Telegram: ' + e.message, 'error');
+        }
+    }
+
+    async function sendTestDiscord() {
+        try {
+            await api('/settings/test-discord', { method: 'POST' });
+            toast('Test Discord message sent successfully', 'success');
+        } catch (e) {
+            toast('Failed to send test Discord: ' + e.message, 'error');
+        }
+    }
+
+    async function sendTestWebhook() {
+        try {
+            await api('/settings/test-webhook', { method: 'POST' });
+            toast('Test webhook sent successfully', 'success');
+        } catch (e) {
+            toast('Failed to send test webhook: ' + e.message, 'error');
+        }
+    }
+
     async function sendTestEmail() {
         const payload = {
             event: document.getElementById('sEmailTemplateType').value,
@@ -1584,6 +1832,140 @@
         window.open(previewURL, '_blank');
     }
 
+    // ── Status Pages Management ──
+    let editingPageId = null;
+    let spCurrentMonitors = new Set();
+
+    async function openStatusPagesView() {
+        showView('statusPages');
+        await loadStatusPages();
+    }
+
+    async function loadStatusPages() {
+        const list = document.getElementById('statusPagesList');
+        document.getElementById('statusPageForm').style.display = 'none';
+        try {
+            const pages = await api('/status-pages');
+            if (!pages || pages.length === 0) {
+                list.innerHTML = '<div class="empty-state"><h3>No status pages yet</h3><p>Create a public status page to share your monitor status.</p></div>';
+                return;
+            }
+            list.innerHTML = pages.map(p => {
+                const pub = p.published
+                    ? '<span class="badge badge-created">Published</span>'
+                    : '<span class="badge badge-paused">Draft</span>';
+                const openLink = (p.published && p.slug)
+                    ? ' · <a href="/status/' + encodeURIComponent(p.slug) + '" target="_blank" rel="noopener">View public ↗</a>'
+                    : '';
+                const count = (p.monitors ? p.monitors.length : 0);
+                return '<div class="sp-card">' +
+                    '<div class="sp-main">' +
+                        '<div class="sp-name">' + esc(p.name) + '</div>' +
+                        '<div class="sp-meta">' + pub + ' · ' + count + ' monitor(s) · /status/' + esc(p.slug || '') + openLink + '</div>' +
+                    '</div>' +
+                    '<div class="sp-actions">' +
+                        '<button class="btn btn-outline btn-sm" onclick="openStatusPageEdit(' + p.id + ')">Edit</button>' +
+                        '<button class="btn btn-danger btn-sm" onclick="deleteStatusPage(' + p.id + ')">Delete</button>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        } catch (e) {
+            list.innerHTML = '<div class="empty-state">Failed to load status pages.</div>';
+        }
+    }
+
+    function renderMonitorChecklist() {
+        const box = document.getElementById('spMonitorList');
+        if (!monitors || monitors.length === 0) {
+            box.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:6px">No monitors available. Create a monitor first.</div>';
+            return;
+        }
+        box.innerHTML = monitors.map(m =>
+            '<label><input type="checkbox" class="sp-mon" value="' + m.id + '" ' +
+            (spCurrentMonitors.has(m.id) ? 'checked' : '') + '> ' + esc(m.name) +
+            ' <span style="color:var(--text3);font-weight:400">(' + m.type + ')</span></label>'
+        ).join('');
+    }
+
+    function openStatusPageCreate() {
+        editingPageId = null;
+        spCurrentMonitors = new Set();
+        document.getElementById('spFormTitle').textContent = 'New Status Page';
+        document.getElementById('spName').value = '';
+        document.getElementById('spSlug').value = '';
+        document.getElementById('spDescription').value = '';
+        document.getElementById('spPublished').checked = false;
+        renderMonitorChecklist();
+        document.getElementById('statusPageForm').style.display = 'block';
+        document.getElementById('statusPageForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function openStatusPageEdit(id) {
+        try {
+            const p = await api('/status-pages/' + id);
+            editingPageId = id;
+            spCurrentMonitors = new Set((p.monitors || []).map(m => m.id));
+            document.getElementById('spFormTitle').textContent = 'Edit Status Page';
+            document.getElementById('spName').value = p.name || '';
+            document.getElementById('spSlug').value = p.slug || '';
+            document.getElementById('spDescription').value = p.description || '';
+            document.getElementById('spPublished').checked = !!p.published;
+            renderMonitorChecklist();
+            document.getElementById('statusPageForm').style.display = 'block';
+            document.getElementById('statusPageForm').scrollIntoView({ behavior: 'smooth' });
+        } catch (e) { toast(e.message, 'error'); }
+    }
+
+    function cancelStatusPageForm() {
+        document.getElementById('statusPageForm').style.display = 'none';
+        editingPageId = null;
+    }
+
+    async function saveStatusPage() {
+        const name = document.getElementById('spName').value.trim();
+        if (!name) { toast('Name is required', 'error'); return; }
+        const payload = {
+            name: name,
+            slug: document.getElementById('spSlug').value.trim(),
+            description: document.getElementById('spDescription').value.trim(),
+            published: document.getElementById('spPublished').checked,
+        };
+        try {
+            let page;
+            if (editingPageId) {
+                page = await api('/status-pages/' + editingPageId, { method: 'PUT', body: JSON.stringify(payload) });
+            } else {
+                page = await api('/status-pages', { method: 'POST', body: JSON.stringify(payload) });
+            }
+            const pageId = page.id || editingPageId;
+            const desired = new Set([].slice.call(document.querySelectorAll('.sp-mon:checked')).map(c => parseInt(c.value)));
+            for (const id of desired) {
+                if (!spCurrentMonitors.has(id)) {
+                    await api('/status-pages/' + pageId + '/monitors/' + id, { method: 'POST' });
+                }
+            }
+            for (const id of spCurrentMonitors) {
+                if (!desired.has(id)) {
+                    await api('/status-pages/' + pageId + '/monitors/' + id, { method: 'DELETE' });
+                }
+            }
+            toast('Status page saved', 'success');
+            document.getElementById('statusPageForm').style.display = 'none';
+            editingPageId = null;
+            await loadStatusPages();
+        } catch (e) { toast(e.message, 'error'); }
+    }
+
+    async function deleteStatusPage(id) {
+        if (!confirm('Delete this status page?')) return;
+        try {
+            await api('/status-pages/' + id, { method: 'DELETE' });
+            toast('Status page deleted', 'success');
+            if (editingPageId === id) { document.getElementById('statusPageForm').style.display = 'none'; editingPageId = null; }
+            await loadStatusPages();
+        } catch (e) { toast(e.message, 'error'); }
+    }
+
     // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {
         initDarkMode();
@@ -1593,6 +1975,14 @@
         checkAuth();
         setInterval(loadMonitors, 30000);
         setInterval(loadEventLogs, 30000);
+        // Redraw the response chart on resize so it stays crisp and correctly sized.
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (selectedId && currentChartHistory) drawResponseChart(false);
+            }, 150);
+        });
     });
     </script>
 </body>
