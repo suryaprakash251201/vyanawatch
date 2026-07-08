@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.tag }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "## VyanaWatch ${{ steps.version.outputs.tag }}" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Docker" >> $GITHUB_OUTPUT
+          echo '```' >> $GITHUB_OUTPUT
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}" >> $GITHUB_OUTPUT
+          echo '```' >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Docker Compose" >> $GITHUB_OUTPUT
+          echo '```yaml' >> $GITHUB_OUTPUT
+          echo "services:" >> $GITHUB_OUTPUT
+          echo "  vyanawatch:" >> $GITHUB_OUTPUT
+          echo "    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}" >> $GITHUB_OUTPUT
+          echo "    container_name: vyanawatch" >> $GITHUB_OUTPUT
+          echo '    restart: unless-stopped' >> $GITHUB_OUTPUT
+          echo '    ports:' >> $GITHUB_OUTPUT
+          echo '      - "8080:8080"' >> $GITHUB_OUTPUT
+          echo '    volumes:' >> $GITHUB_OUTPUT
+          echo '      - ./data:/app/data' >> $GITHUB_OUTPUT
+          echo "      - ./config.yaml:/app/config.yaml:ro" >> $GITHUB_OUTPUT
+          echo '```' >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "### Changelog" >> $GITHUB_OUTPUT
+          echo "$(git log $(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo HEAD)..HEAD --oneline --no-decorate)" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: VyanaWatch ${{ steps.version.outputs.tag }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          generate_release_notes: false
